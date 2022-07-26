@@ -13,6 +13,7 @@
 
 window.sobSetup=function(){
    window.sobStore=window.store;
+   window.sobStore._actions={'setupConnection':[],'setupGame':[],'setupChat':[],'incrementHighestLadder':[],'ladder/setup':[],'ladder/handleLadderEvent':[],'ladder/handleGlobalEvent':[],'ladder/handlePrivateEvent':[],'ladder/calculate':[],'ladder/handleEvent':[],'ladder/stats/calculate':[],'mod/searchName':[]};
    window.sobFunctions={};
    window.sobData={};
    window.sobSettings={};
@@ -64,6 +65,15 @@ window.sobSetup=function(){
       };
    };
    window.sobResetupInterval=setInterval(window.sobResetup,1000);
+   window.sobTickDetectLastValue=0;
+   window.sobTickDetect=function(){
+      let currentValue=store.state.ladder.rankers.filter(r=>r.growing)[0]?.points.toNumber();
+      if(currentValue&&window.sobTickDetectLastValue!=currentValue){
+         window.sobTickDetectLastValue=currentValue;
+         for(a in window.sobStore._actions){window.sobStore._actions[a].forEach(m=>m({'message':{'delta':1}}))};
+      };
+   };
+   window.sobTickDetectInterval=setInterval(window.sobTickDetect,100);
 };
 window.sobSetup();
 

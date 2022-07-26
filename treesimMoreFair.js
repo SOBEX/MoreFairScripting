@@ -1103,10 +1103,13 @@
 			}
 		});
 */
+		window.updateLadderLastValue=0;
 		setInterval(function(){
-			updateLadder();
-		},1000);
+			let currentValue=store.state.ladder.rankers.filter(r=>r.growing)[0]?.points.toNumber();
+			if(currentValue&&window.updateLadderLastValue!=currentValue){
+				window.updateLadderLastValue=currentValue;
+				updateLadder();
+			}
+		},100);
 
 	},waitingTime);
-
-
