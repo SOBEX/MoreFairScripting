@@ -1,0 +1,8 @@
+,?[ \r\n]*?\{[ \r\n]*?"accountId": ?(\d+),[ \r\n]*?"bias": ?(\d+),[ \r\n]*?"multiplier": ?(\d+),[ \r\n]*?"points": ?"(\d+)",[ \r\n]*?"power": ?"(\d+)",[ \r\n]*?"rank": ?(\d+),[ \r\n]*?"username": ?"(.+?)",[ \r\n]*?"timesAsshole": ?(\d+),[ \r\n]*?"grapes": ?"(\d+)",[ \r\n]*?"vinegar": ?"(\d+)",[ \r\n]*?"autoPromote": ?(false|true),[ \r\n]*?"growing": ?(false|true),[ \r\n]*?"you": ?(false|true)[ \r\n]*?\}
+$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13\n
+
+(?:\{"allLadders":\{|\],)"(\d+)":\[
+\nladder $1\naccountId,bias,multiplier,points,power,rank,username,timesAsshole,grapes,vinegar,autoPromote,growing,you\n
+
+\]\}\}
+\n
