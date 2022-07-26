@@ -246,13 +246,12 @@ window.sobEventer={
       console.log('ladder/handleEvent:',e);
    },
 };
-window.sobRegister(window.sobEventerLadder);
-window.sobRegister(window.sobEventerGlobal);
-window.sobRegister(window.sobEventerPrivate);
-window.sobRegister(window.sobEventerCalculate);
-window.sobRegister(window.sobEventer);
+//window.sobRegister(window.sobEventerLadder);
+//window.sobRegister(window.sobEventerGlobal);
+//window.sobRegister(window.sobEventerPrivate);
+//window.sobRegister(window.sobEventerCalculate);
+//window.sobRegister(window.sobEventer);
 
-window.sobUnregister(window.sobEventerCalculate);
 
 
 
