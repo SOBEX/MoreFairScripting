@@ -1,5 +1,5 @@
 	// ==UserScript==
-	// @name         Tree 2022-07-26 No jQuery, Tampermonkey-ready, Season2-ready
+	// @name         Tree 2022-07-26 No jQuery, not Tampermonkey-ready, Season2-ready
 	// @namespace    https://fair.kaliburg.de/#
 	// @version      0.425
 	// @description  Fair Game QOL Enhancements
@@ -16,14 +16,16 @@
 
 	// Script made by aqualxx#5004 and maintained by Lynn#6969
 	// Simulation by Tree#1019
-	// Some more contributions by Spyrfyr & Boozle & Bender & MobileChecker & Beverice
+	// Some more contributions by Spyrfyr & Boozle & Bender & MobileChecker & Beverice & SOBEX
 
-	Fair.register(api=>window.store=api);
+
 
 	// Time to wait (in milliseconds) before running the script to give the page time to load properly
 	waitingTime = 5000;
 
 	setTimeout(function(){
+
+		Fair.register(api=>window.store=api);
 
 		// Sets theme to "Light"
 		document.getElementsByTagName('html')[0].className='light';
@@ -121,6 +123,7 @@
 		let myfloortime = "";
 		let toptime1 = "";
 		let toptime2 = "";
+		let decay = "";
 		let simResultsText = "";
 		let rowText = "";
 
@@ -420,10 +423,11 @@
 			runSimulation(false);
 			updateTimes();
 
+
 			// Calculate vinegar decay of top ranker
 			let buttonRowSecondColumn = document.getElementsByClassName('col-6')[1];
-			//buttonRowSecondColumn.innerHTML = "Round Base Point Requirement: "+window.store.state.settings.pointsForPromote+"<br/>Ladder Base Point Requirement: " + window.store.state.ladder.basePointsToPromote + "<br/>";
-			buttonRowSecondColumn.innerHTML = "Ladder Base Point Requirement: " + Math.round(window.store.state.ladder.basePointsToPromote).toLocaleString() + "<br/>";
+			buttonRowSecondColumn.innerHTML = "Round Base Point Requirement: "+Math.round(window.store.state.settings.pointsForPromote).toLocaleString()+"<br/>Ladder Base Point Requirement: " + Math.round(window.store.state.ladder.basePointsToPromote).toLocaleString() + "<br/>";
+			//buttonRowSecondColumn.innerHTML = "Ladder Base Point Requirement: " + Math.round(window.store.state.ladder.basePointsToPromote).toLocaleString() + "<br/>";
 			if (window.store.state.ladder.rankers[0].accountId === topRanker.accountId && window.store.state.ladder.rankers[0].growing && window.store.state.ladder.rankers[0].points - basePointsToPromote >= 0 && window.store.state.ladder.rankers.length >= Math.max(window.store.state.settings.minimumPeopleForPromote,window.store.state.ladder.number)) {
 				// Top Ranker has not changed, and would be able to promote
 				topRankerVinegar = topRankerVinegar * 0.9975; // decay by 0.25%
@@ -437,6 +441,7 @@
 				topRankerSeconds = 0;
 				buttonRowSecondColumn.innerHTML += "Vinegar decay: n/a";
 			}
+
 
 			// Build new ranker table
 			let rankersToShow = [];
@@ -562,7 +567,8 @@
 			}
 			else if (window.store.state.ladder.yourRanker.rank == 1 // top of the ladder
 			&& window.store.state.ladder.yourRanker.growing // not promoted
-			&& window.store.state.ladder.number != window.store.state.settings.assholeLadder) { // not in asshole ladder
+			&& !window.store.state.ladder.types.includes('ASSHOLE')) { // not in asshole ladder
+			// && window.store.state.ladder.number != window.store.state.settings.assholeLadder) { // not in asshole ladder
 				document.getElementsByTagName('body')[0].style.backgroundColor = topIsLava;
 				if (window.store.state.ladder.yourRanker.points > pointsForManualPromote + window.store.state.ladder.yourRanker.power) { // promotion threshold crossed (+1 tick to not trigger with autopromote)
 					pw.play(); // play alarm continuously if promotion is possible, unless in AH
@@ -806,10 +812,10 @@
 							&& !(window.store.state.ladder.rankers[0].accountId === firstRanker.accountId
 							&& window.store.state.ladder.rankers[0].points.greaterThanOrEqualTo(basePointsToPromote))
 							) {
-								//timeSimulated += 30;
-								timeSimulated += window.store.state.settings.manualPromoteWaitTime;
-								//timeToOneMap.set(firstRanker.accountId, {time: timeSimulated, order: ++numberHitOne, approximate: false});
-								firstRanker.growing = false;
+								timeSimulated += 30;
+								//timeSimulated += window.store.state.settings.manualPromoteWaitTime;
+								timeToOneMap.set(firstRanker.accountId, {time: timeSimulated, order: ++numberHitOne, approximate: false});
+								//firstRanker.growing = false;
 						}
 						else {
 							// Unsupported option; assume wall
@@ -824,7 +830,7 @@
 			}
 
 			simResultsText += " (Simulation complete: " + (simulationFinished ? '\u{1F7E9}' : '\u{1F7E5}') + ")</p>";
-			simResultsText += "<table id='simtable' cellpadding='2' style='width:100%'><colgroup><col width='5%'><col width='12%'><col width='12%'><col width='11%'><col width='10%'><col width='10%'><col width='10%'><col width='25%'><col width='5%'></colgroup><tr style='font-weight: bold; font-size: 10px;'><td style='padding-right: 5px;'></td><td style='padding-right: 5px;'>Time to Promo</td><td style='padding-right: 5px;'>Diff to Promo</td><td style='padding-right: 5px;'>Bi/Mu</td><td style='padding-right: 5px;'>promPower</td><td style='padding-right: 5px;'>curPower</td><td style='padding-right: 5px;'>curPoDiff</td><td>Name</td><td></td></tr>";
+			simResultsText += "<table id='simtable' cellpadding='2' style='width:100%'><colgroup><col width='5%'><col width='12%'><col width='12%'><col width='11%'><col width='10%'><col width='10%'><col width='10%'><col width='25%'><col width='5%'></colgroup><tr style='font-weight: bold; font-size: 10px;'><td style='padding-right: 5px;'></td><td style='padding-right: 5px;'>Time to Promo</td><td style='padding-right: 5px;'>Diff to Promo</td><td style='padding-right: 5px;'>Bi/Mu</td><td style='padding-left: 5px;text-align: right;'>promPower</td><td style='padding-left: 5px;text-align: right;'>curPower</td><td style='padding-left: 5px;text-align: right;'>curPoDiff</td><td style='padding-left: 5px;'>Name</td><td></td></tr>";
 
 			let myTimeToPromo = timeToOneMap.get(myID).time;
 			let myPromotionTime = new Date();
@@ -885,9 +891,9 @@
 					simResultsText += "</td>";
 					simResultsText += "<td>"+String(ranker.bias).padStart(3, "+0")+String(ranker.multi).padStart(3, "x0")+"</td>";
 					if (currentMulti - simMulti === 1 || currentMulti === simMulti) {
-						simResultsText += "<td>"+Math.round(ranker.power).toLocaleString()+"</td>";
-						simResultsText += "<td>"+Math.round(currentPower).toLocaleString()+"</td>";
-						simResultsText += "<td>";
+						simResultsText += "<td style='text-align: right;'>"+Math.round(ranker.power).toLocaleString()+"</td>";
+						simResultsText += "<td style='text-align: right;'>"+Math.round(currentPower).toLocaleString()+"</td>";
+						simResultsText += "<td style='text-align: right;'>";
 						if (ranker.you) {
 						}
 						else {
@@ -898,7 +904,7 @@
 					else {
 						simResultsText += "<td></td><td></td><td></td>";
 					}
-					simResultsText += "<td style='overflow-x: hidden'>"+sanitize(ranker.username)+"</td>";
+					simResultsText += "<td style='overflow-x: hidden; padding-left: 5px;'>"+sanitize(ranker.username)+"</td>";
 					simResultsText += "<td>"+"<a style='text-decoration: none;' href='#' onclick='setSimulationPlayer("+ranker.accountId+")'>\u{1F441}</a></td>";
 					simResultsText += "</tr>";
 
@@ -929,9 +935,27 @@
 				toptime2 = secondsToHms(timeOnTop,false);
 			}
 
+			if (window.store.state.ladder.rankers[0].accountId === topRanker.accountId && window.store.state.ladder.rankers[0].growing && window.store.state.ladder.rankers[0].points - basePointsToPromote >= 0 && window.store.state.ladder.rankers.length >= Math.max(10,window.store.state.ladder.number)) {
+				// Top Ranker has not changed, and would be able to promote
+				topRankerVinegar = topRankerVinegar * 0.9975; // decay by 0.25%
+				topRankerSeconds += 1;
+				decay = topRanker.username + "#" + topRanker.accountId + " lost " + Math.round((1-topRankerVinegar)*10000) / 100 + "% (" + topRankerSeconds + "s)";
+			}
+			else {
+				// Top Ranker has changed
+				topRanker = window.store.state.ladder.rankers[0];
+				topRankerVinegar = 1;
+				topRankerSeconds = 0;
+				decay = "n/a";
+			}
+
 			if (current) {
 				simResultsText += "<table cellpadding='3' style='margin-top:6px;'><tr style='font-weight: bold; font-size: 12px;'><td></td><td>Action</td><td style='padding-right: 60px;'>No changes</td><td style='font-weight:bold;' colspan='2'>Cost for bias</td></tr><tr style='font-size: 12px;'><td style='font-weight: bold;'>Promotion (local time)</td><td>"+promotime1+"</td><td>"+promotime2+"</td><td>"+String(highestsensiblebias - 3).padStart(3, "+0")+"</td><td class='text-end'>"+Math.pow(window.store.state.ladder.number + 1, highestsensiblebias - 3).toLocaleString()+"</td></tr><tr style='font-size: 12px;'><td style='font-weight: bold;'>Time "+ (noActionTakenTimeTime > actionTakenTime ? "gain" : "loss") +"</td><td>"+gaintime1+"</td><td>"+gaintime2+"</td><td>"+String(highestsensiblebias - 2).padStart(3, "+0")+"</td><td class='text-end'>"+Math.pow(window.store.state.ladder.number + 1, highestsensiblebias - 2).toLocaleString()+"</td></tr><tr style='font-size: 12px;'><td style='font-weight: bold;'>Floor time</td><td>"+floortime1+"</td><td>"+floortime2+"</td><td>"+String(highestsensiblebias - 1).padStart(3, "+0")+"</td><td class='text-end'>"+Math.pow(window.store.state.ladder.number + 1, highestsensiblebias - 1).toLocaleString()+"</td></tr><tr style='font-size: 12px;'><td style='font-weight: bold;'>Top time</td><td>"+toptime1+"</td><td>"+toptime2+"</td><td>"+String(highestsensiblebias).padStart(3, "+0")+"</td><td class='text-end'>"+Math.pow(window.store.state.ladder.number + 1, highestsensiblebias).toLocaleString()+"</td></tr></table>";
 			}
+			// <tr style='font-size: 12px;'><td style='font-weight: bold;'>Vinegar decay:</td><td colspan='4'>"+decay+"</td></tr>
+
+
+
 			simResultsInner.innerHTML = simResultsText;
 
 			if (!current){
