@@ -1,5 +1,5 @@
 	// ==UserScript==
-	// @name         Tree 2022-07-14 No jQuery, not Tampermonkey-ready, Season2-ready
+	// @name         Tree 2022-07-26 No jQuery, Tampermonkey-ready, Season2-ready
 	// @namespace    https://fair.kaliburg.de/#
 	// @version      0.425
 	// @description  Fair Game QOL Enhancements
@@ -28,10 +28,9 @@
 		// Sets theme to "Light"
 		document.getElementsByTagName('html')[0].className='light';
 
-
 		// Navbar is not needed (if you need it, remove this line)
-		document.getElementsByTagName('nav')[0].style.display = "none"; 
-		
+		document.getElementsByTagName('nav')[0].style.display = "none";
+
 		// Set the ladder area to cover more space (remove this if you want the navbar back)
 		document.getElementsByClassName('ladder-row')[0].style.maxHeight='87%';
 		document.getElementsByClassName('ladder-row')[0].style.height='87%';
@@ -44,7 +43,7 @@
 		document.getElementsByClassName('col')[1].style["padding-top"] = "8px";
 		document.getElementsByClassName('col')[2].style["padding-top"] = "8px";
 		document.getElementsByClassName('col')[3].style["padding-top"] = "8px";
-		
+
 		const SimulationBehaviors = {
 			WALL: 0, // No action is taken by anyone, thus walling
 			AUTOPROMOTE: 1, // Everyone instantly promotes when they reach #1
@@ -57,12 +56,12 @@
 		}
 
 		// Timeout of the simulation in milliseconds. The default value of 200 should be enough in most situations.
-		// However, in ladders with many rankers or very early in new ladders, a higher value may be useful. 
-		const simulationTimeoutOptions = { 
+		// However, in ladders with many rankers or very early in new ladders, a higher value may be useful.
+		const simulationTimeoutOptions = {
 			a: 200,
-			b: 400, 
-			c: 600, 
-			d: 800 
+			b: 400,
+			c: 600,
+			d: 800
 		}
 
 		if (typeof unsafeWindow !== 'undefined') {
@@ -78,7 +77,7 @@
 		let otherColor = "orange"; // simulated ranker color
 		let myColor = "yellow"; // my color
 		let promoted = "#C0C0C0"; // promoted rankers
-			
+
 		// Colorization of background
 		let farmingGrapes = "#e5ffd9"; // bottom of the ladder, grapes are farmed
 		let topIsLava = "#ffdddd"; // top of the ladder, vinegar is decaying
@@ -89,7 +88,7 @@
 		let zombieText = "#cccccc"; // Text color for zombies
 		let darkGreen = "#007000";
 		let darkRed = "#700000";
-		
+
 		/* Global variables */
 		let pointsForManualPromote;
 
@@ -108,7 +107,7 @@
 		let myTimeToFirst = ""
 		let noActionTakenTimeTime;
 		let actionTakenTime;
-				
+
 		const myID = store.state.user.accountId;
 		let basePointsToPromote;
 		let simulatedRanker = myID;
@@ -124,15 +123,15 @@
 		let toptime2 = "";
 		let simResultsText = "";
 		let rowText = "";
-		
-		let topRanker = store.state.ladder.rankers[0];	
+
+		let topRanker = store.state.ladder.rankers[0];
 		let topRankerVinegar = 1;
 		let topRankerSeconds = 0;
-		
+
 		//let pw = new Audio('https://www.myinstants.com/media/sounds/woo.mp3'); // wooo
 		//let pw = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-police-whistle-614.mp3');  // whistle
 		let pw = new Audio('https://www.soundboard.com/handler/DownLoadTrack.ashx?cliptitle=Shiny+metal+ass&filename=nt/NTEwNzE0MjczNTEwODA1_uUzwjP9PLyM.mp3');  // bmsma
-		
+
 		/* Page updates */
 		window.subscribeToDomNode = function(id, callback) {
 			//let input = $("#"+id)[0];
@@ -149,13 +148,12 @@
 
 		document.getElementsByTagName('body')[0].style.lineHeight = 1;
 
+		// Replace ranker table with simulated one
 		let oldRankerTable = document.getElementsByClassName('table')[0];
 		let newRankerTable = oldRankerTable.cloneNode(true);
 		newRankerTable.innerHTML = "<col width='6%'><col width='7%'><col width='33%'><col width='5%'><col width='11%'><col width='11%'><col width='12%'><col width='15%'><tbody id='newTable'></tbody>";
 		oldRankerTable.parentElement.appendChild(newRankerTable);
 		oldRankerTable.setAttribute('hidden','');
-		
-
 		thead = newRankerTable.createTHead();
 		thead.style["z-index"] = "999";
 		thead.style["position"] = "sticky";
@@ -229,7 +227,7 @@
 				}
 				else {
 					return "0s";
-				}        
+				}
 			}
 
 			const h = Math.floor(duration / 3600);
@@ -239,7 +237,7 @@
 			let hDisplay = "";
 			let mDisplay = "";
 			let sDisplay = "";
-			
+
 			if (longVersion) {
 				hDisplay = String(h).padStart(2, "0") + "h ";
 				mDisplay = String(m).padStart(2, "0") + "m ";
@@ -257,7 +255,7 @@
 		/* Ladder updates */
 		window.updateTimes = function() {
 			const yourSimulatedRanker = simulatedLadderData.rankers.filter(obj => obj.you)[0];
-			
+
 			/* Add in approximate times */
 			for (const ranker of store.state.ladder.rankers) {
 				const simulatedRanker = simulatedLadderData.rankers.filter(obj => obj.accountId === ranker.accountId)[0];
@@ -289,13 +287,13 @@
 
 			/* Set output strings */
 			let oneOrder = 0;
-			
+
 			// store time to reach the top
 			if (timeToOneMap.has(myID)) {
 				strMyTimeToFirst = secondsToHms(timeToOneMap.get(myID).time,false);
 				myTimeToFirst = timeToOneMap.get(myID).time;
 			}
-			
+
 			timeToOneMap.forEach(obj => {
 				let outputStr = "";
 				if (obj.time === Infinity) {
@@ -305,14 +303,14 @@
 
 					outputStr += "<sub>#" + (++oneOrder) + "</sub>";
 				}
-				
+
 				if (obj.approximate) {
 					outputStr += "<i>";
 				}
 				if (store.state.ladder.rankers[0].points.lessThan(basePointsToPromote)) {
 					outputStr += "L";
 				}
-				
+
 				outputStr += secondsToHms(obj.time,false);
 				if (obj.approximate) {
 					outputStr += "</i>";
@@ -341,9 +339,9 @@
 					outputStr += "</i>";
 				}
 				obj.outputStr = outputStr;
-			
+
 			});
-			
+
 		}
 
 		window.sanitize = function(username) {
@@ -367,37 +365,31 @@
 			averageTickTime = tickTimes.reduce((a, b) => a + b) / tickTimes.length;
 		}
 
-		let mainColumn = document.getElementsByClassName('col-7')[0];
+		const mainColumn = document.getElementsByClassName('col-7')[0];
 		mainColumn.style['width']='40%';
 		mainColumn.style['padding-right']='5px';
 		mainColumn.style['font-size']='90%';
-		let chatColumn = document.getElementsByClassName('col-5')[0];
+
+		const chatColumn = document.getElementsByClassName('chat-window')[0].parentNode;
 		chatColumn.style['width']='31%';
 		chatColumn.style['padding-right']='0';
 		chatColumn.style['padding-left']='0';
 		chatColumn.style['font-size']='90%';
-		//document.getElementsByClassName('chat-window')[0].style.height=chatWindowHeight+'%';
-		//$("<div class='col-5'></div>").insertAfter(mainColumn);
-		const col5div = document.createElement('div');
-		col5div.classList.add('col-5');
-		insertAfter(mainColumn,col5div);
-		let simColumn = document.getElementsByClassName('col-5')[0];
-		simColumn.style['width']='29%';
-		simColumn.style['padding-right']='0';
-		
+
+		const middleColumn = document.createElement('div');
+		insertAfter(mainColumn,middleColumn);
+		middleColumn.style['width']='29%';
+		middleColumn.style['padding-right']='0';
+
 		let simOptionshtml = "<div id='simOptions' style='padding: 8px 0px; width: 100%; font-size: 12px; '><p style='font-weight: bold; margin-bottom: 6px;'>Simulation options</p><div style='float:left; font-size: 10px; width:33%; padding-right:3%;'><span>Simulate Action</span><select name='fonts' id='simulationAction' class='form-select' style='height: 25px; font-size: 10px; padding: 0 2.25rem 0 0.75rem; margin-top:3px;'><option value='BIAS'>Bias</option><option value='MULTI'>Multi</option><option value='GRAPE'>Grape</option></select></div><div style='float:left; font-size: 10px; width:33%; padding-right:3%;'><span>Simulation Behavior</span><select name='fonts' id='simulationBehavior' class='form-select' style='height: 25px; font-size: 10px; padding: 0 2.25rem 0 0.75rem; margin-top:3px;'><option value='AUTOPROMOTE'>Auto promote</option><option value='WALL'>Wall</option><option value='MANUALPROMOTE'>Manual promote</option></select></div><div style='float:left; font-size: 10px; width:33%; padding-right:3%;'><span>Simulation Timeout (ms)</span><select name='fonts' id='simulationTimeout' class='form-select' style='height: 25px; font-size: 10px; padding: 0 2.25rem 0 0.75rem; margin-top:3px;'><option value='a'>200</option><option value='b'>400</option><option value='c'>600</option><option value='d'>800</option></select></div></div>"
-		
-		/*
-		<div style='display: flex; flex-direction: row; '><input name='fonts' id='simulationTimeout' class='input-group' maxlength='3' style='height: 25px; font-size: 10px; padding: 0 2.25rem 0 0.75rem; margin-top:3px; border:1px solid #ced4da; border-radius: 0.25rem;' type='text'><button style='height:25px;margin-top:3px;margin-left: 3px; font-size: 12px;' class='btn btn-primary shadow-none' id='rowsButton' onclick='setSimulationTimeout()'>Set</button></div>
-		*/
-		simColumn.innerHTML = simOptionshtml;
+
+		middleColumn.innerHTML = simOptionshtml;
 
 		const simResultsPara = document.createElement("p");
 		simResultsPara.style['margin-top']='10px';
 		simResultsPara.innerHTML = "Initialize simulation";
 		simResultsPara.style['font-weight']='bold';
 
-		//let simResults = "<div id='simResults' style='padding: 0px; font-size: 12px;'><p style='margin-top: 10px';><span style='font-weight: bold;'>Waiting for simulation results</p></div>"
 		const simResults = document.createElement('div');
 		simResults.setAttribute("id", "simResults");
 		simResults.style['padding']='2px 0px 0px';
@@ -444,14 +436,13 @@
 				topRankerSeconds = 0;
 				buttonRowSecondColumn.innerHTML += "Vinegar decay: n/a";
 			}
-			
-			
+
 			// Build new ranker table
 			let rankersToShow = [];
 			for (const [rank, ranker] of store.state.ladder.rankers.entries()) {
 				rankersToShow.push(ranker);
-			}			
-			document.getElementById("newTable").innerHTML = "";			
+			}
+			document.getElementById("newTable").innerHTML = "";
 			rowText = "";
 			for (const ranker of rankersToShow) {
 				// Colorize row
@@ -474,7 +465,7 @@
 					}
 					else if (store.state.ladder.yourRanker.bias > ranker.bias) {
 						rowText += "background-color:"+sMulti_lBias;
-					} 
+					}
 					else if (store.state.ladder.yourRanker.bias < ranker.bias) {
 						rowText += "background-color:"+sMulti_hBias;
 					}
@@ -483,14 +474,14 @@
 					rowText += "background-color:"+zombie;
 				}
 				rowText += "'>";
-				
+
 				// Ranker Rank & Tag
 				rowText += "<td>" + ranker.rank + " ";
 				if (ranker.tag != 0) {
 					rowText += ranker.tag + "<sup>" + ranker.ahPoints + "</sup>";
 				}
 				rowText += "</td>";
-				
+
 				// Multi & Bias
 				let biasCost = Math.pow(store.state.ladder.number + 1, ranker.bias + 1);
 				let multiCost = Math.pow(store.state.ladder.number + 1, ranker.multi + 1);
@@ -507,23 +498,23 @@
 					}
 					else {
 						rowText += "<span title='Multi cost: " + Math.round(multiCost).toLocaleString()+" power (affordable in " + secondsToHms(Math.ceil((multiCost - ranker.power)/getAcceleration(ranker)),false) +")' style='color: "+darkRed+";'>x"+String(ranker.multi).padStart(2, "0")+"</span>";
-					}				
+					}
 				}
 				else {
 					rowText += "+"+String(ranker.bias).padStart(2, "0")+" x"+String(ranker.multi).padStart(2, "0");
 				}
 				rowText += "</td>";
-				
+
 				// Username
 				rowText += "<td style='overflow:hidden'>"+sanitize(ranker.username)+"<sup>#"+ranker.accountId+"</sup></td>";
-				
+
 				// Power Gain
 				rowText += "<td class='text-end'>";
 				if (ranker.growing && ranker.rank !== 1) {
 					rowText += "+" + Math.round(getAcceleration(ranker)).toLocaleString();
 				}
 				rowText += "</td>";
-				
+
 				// Power
 				rowText += "<td class='text-end' ";
 				if (ranker.rank === 1 && ranker.growing) {
@@ -536,14 +527,14 @@
 					}
 				}
 				rowText += ">"+Math.round(ranker.power).toLocaleString()+"</td>";
-				
+
 				// Power Diff
 				rowText += "<td class='text-end'>";
 				if (timeToYouMap.has(ranker.accountId)) {
 					rowText += Math.round(store.state.ladder.yourRanker.power - ranker.power).toLocaleString();
 				}
 				rowText += "</td>";
-				
+
 				// Time to You
 				rowText += "<td class='text-end'>";
 				if (timeToYouMap.has(ranker.accountId)) {
@@ -553,11 +544,11 @@
 
 				// Points
 				rowText += "<td class='text-end'>"+Math.round(ranker.points).toLocaleString()+"</td>";
-				
+
 				rowText += "</tr>";
 			}
 			document.getElementById("newTable").innerHTML = rowText;
-			
+
 
 
 			// Colorize background & update title based on ranker state
@@ -577,7 +568,7 @@
 				}
 				newDocumentTitle += " TOP IS LAVA!!!";
 				myLadderState = 3;
-			}			
+			}
 			else {
 				if (myLadderState == 1 && store.state.ladder.yourRanker.growing) { // play alarm once if losing the bottom
 					pw.play();
@@ -589,21 +580,6 @@
 			document.title = newDocumentTitle;
 		}
 
-
-
-		window.setLadderRows = function() {
-			var input = Number(document.querySelector('#rowsInput').value);
-			if (isNaN(input)) {
-				document.querySelector('#rowsInput').value = '';
-				return;
-			}
-			if (input < 10) {
-				document.querySelector('#rowsInput').value = '10';
-				return;
-			}
-		}
-
-
 		window.setSimulationPlayer = function (id) {
 			if (simulatedRanker == id) {
 				simulatedRanker = myID;
@@ -612,7 +588,6 @@
 				simulatedRanker = id;
 			}
 		}
-
 
 		function insertAfter(referenceNode, newNode) {
 		  referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
@@ -634,15 +609,12 @@
 			return inputArr;
 		}
 
-
 		let simResultsInner = document.getElementById("simResults");
-
 		function runSimulation(current) {
 			if(!current){
 				simResultsInner.innerHTML = "";
 				simResultsText = "";
 			}
-
 
 			// Variables
 			timeSimulated = 0;
@@ -657,7 +629,7 @@
 			//pointsForManualPromote = store.state.settings.pointsForManualPromote.mul(store.state.ladder.number);
 			pointsForManualPromote = store.state.ladder.stats.pointsNeededForManualPromote;
 			// Initialize arrays
-			simulatedLadderData = JSON.parse(JSON.stringify(store.state.ladder));	
+			simulatedLadderData = JSON.parse(JSON.stringify(store.state.ladder));
 			let timeToYouSigns = new Map();
 			timeToOneMap.clear();
 			timeToYouMap.clear();
@@ -671,7 +643,7 @@
 					simResultsText += "for user ID #" + simulatedRanker + " ";
 				}
 				// Bias for the simulated player (does not have be able to buy it)
-				if(simulationAction === SimulationActions.BIAS) { 
+				if(simulationAction === SimulationActions.BIAS) {
 					simResultsText += "assuming +1 Bias";
 					simulatedLadderData.rankers.filter(x => x.accountId == simulatedRanker)[0].points = 0;
 					simulatedLadderData.rankers.filter(x => x.accountId == simulatedRanker)[0].bias += 1;
@@ -680,7 +652,7 @@
 						ranker.rank = index + 1;
 					});
 				// Multi for the simulated player (does not have be able to buy it)
-				} else if (simulationAction === SimulationActions.MULTI) { 
+				} else if (simulationAction === SimulationActions.MULTI) {
 					simResultsText += "assuming +1 Multi";
 					simulatedLadderData.rankers.filter(x => x.accountId == simulatedRanker)[0].points = 0;
 					simulatedLadderData.rankers.filter(x => x.accountId == simulatedRanker)[0].power = 0;
@@ -691,7 +663,7 @@
 						ranker.rank = index + 1;
 					});
 				// If the simulated player gets successfully graped (does not have to be #1)
-				} else if (simulationAction === SimulationActions.GRAPE) { 
+				} else if (simulationAction === SimulationActions.GRAPE) {
 					simResultsText += "assuming graping";
 					simulatedLadderData.rankers.filter(x => x.accountId == simulatedRanker)[0].points = 0;
 					const multiCost = Math.pow(store.state.ladder.number + 1, simulatedLadderData.rankers.filter(x => x.accountId == simulatedRanker)[0].multi + 1);
@@ -726,7 +698,7 @@
 
 				// Find lowest ETA (time until someone somewhere in the ladder will change positions)
 				let minETA = Infinity;
-				
+
 				for (const ranker of simulatedLadderData.rankers) {
 					if (!ranker.growing) {
 						continue;
@@ -743,7 +715,7 @@
 							}
 						}
 					}
-					
+
 					if (ranker.rank === 1) {
 						continue;
 					}
@@ -757,7 +729,7 @@
 							break;
 						}
 					}
-				
+
 				}
 				// Ensure at least 1 tick passes
 				if (minETA < averageTickTime) {
@@ -829,7 +801,7 @@
 								firstRanker.growing = false;
 						}
 						else if (simulationBehavior === SimulationBehaviors.MANUALPROMOTE
-							// Test for manual promote in AH
+							// Test for manual promote in AH ==> doesnt work
 							&& !(store.state.ladder.rankers[0].accountId === firstRanker.accountId
 							&& store.state.ladder.rankers[0].points.greaterThanOrEqualTo(basePointsToPromote))
 							) {
@@ -846,18 +818,14 @@
 				}
 			}
 
-
 			if (timeToOneMap.size === simulatedLadderData.rankers.length) {
 				simulationFinished = true;
 			}
-			
 
 			simResultsText += " (Simulation complete: " + (simulationFinished ? '\u{1F7E9}' : '\u{1F7E5}') + ")</p>";
 			simResultsText += "<table id='simtable' cellpadding='2' style='width:100%'><colgroup><col width='5%'><col width='12%'><col width='12%'><col width='11%'><col width='10%'><col width='10%'><col width='10%'><col width='25%'><col width='5%'></colgroup><tr style='font-weight: bold; font-size: 10px;'><td style='padding-right: 5px;'></td><td style='padding-right: 5px;'>Time to Promo</td><td style='padding-right: 5px;'>Diff to Promo</td><td style='padding-right: 5px;'>Bi/Mu</td><td style='padding-right: 5px;'>promPower</td><td style='padding-right: 5px;'>curPower</td><td style='padding-right: 5px;'>curPoDiff</td><td>Name</td><td></td></tr>";
-			
 
 			let myTimeToPromo = timeToOneMap.get(myID).time;
-			//let myTimeToPromo = 0;
 			let myPromotionTime = new Date();
 			myPromotionTime.setSeconds(myPromotionTime.getSeconds() + myTimeToPromo)
 			let simMulti = store.state.ladder.yourRanker.multi;
@@ -873,11 +841,11 @@
 				const ranker = simulatedLadderData.rankers.filter(x => x.accountId === accountId)[0];
 
 				const currentRanker = store.state.ladder.rankers.filter(x => x.accountId == accountId)[0];
-				
+
 				let currentMulti = currentRanker.multi;
 				let currentBias = currentRanker.bias;
 				let currentPower = currentRanker.power;
-				
+
 				if (obj.order <= 22 || ranker.you) { // limit to top 22 because the rankers further below are not that interesting
 					simResultsText += "<tr style='";
 					if (ranker.you) {
@@ -941,10 +909,10 @@
 						}
 					}
 				}
-			
+
 			});
 			simResultsText += "</table>";
-			
+
 			let timeDiff = Math.abs(noActionTakenTimeTime - actionTakenTime);
 
 			if (!current) {
@@ -965,144 +933,16 @@
 			}
 			simResultsInner.innerHTML = simResultsText;
 
-			
-
 			if (!current){
 				runSimulation(true)
 			}
 		}
 
-		window.addOption = function(optionElement) {
-			document.querySelector('#offcanvas').appendChild(optionElement);
-		}
-
-		window.addOptionDevider = function() {
-			var optionElement = document.createElement("hr");
-			addOption(optionElement);
-		}
-
-		window.addNewSection = function(name) {
-			addOptionDevider();
-			var optionElement = document.createElement("h4");
-			optionElement.innerHTML = name;
-			addOption(optionElement);
-		}
-
-		window.baseOptionDiv = function(content = "") {
-			var newDiv = document.createElement("div");
-			newDiv.style = "display: block; padding: 0.5rem; font-size:1.25rem"
-			newDiv.innerHTML = content;
-			return newDiv;
-		}
-/*
-		window.ButtonOption = function(name, id) {
-			var newDiv = baseOptionDiv();
-			var button = document.createElement("button");
-			button.className = "btn btn-primary";
-			button.innerHTML = name;
-			button.id = id;
-			newDiv.appendChild(button);
-			return newDiv;
-		}
-		window.SliderOption = function(name, id, min, max, step, value) {
-			var newDiv = baseOptionDiv();
-			var slider = document.createElement("input");
-			slider.type = "range";
-			slider.min = min;
-			slider.max = max;
-			slider.step = step;
-			slider.value = value;
-			slider.style = "width: 100%";
-			slider.id = id;
-			var sliderLabel = document.createElement("label");
-			slider.oninput = function() {
-				sliderLabel.innerHTML = name + ": " + slider.value;
-			}
-			sliderLabel.innerHTML = name + ": " + slider.value;
-			newDiv.appendChild(sliderLabel);
-			newDiv.appendChild(slider);
-			return newDiv;
-		}
-*/
-
-
-		window.SelectOption = function(title, id, values) {
-			//values is an array of objects with display and value properties
-			return baseOptionDiv
-			(`<span>${title}</span>
-			  <select name="fonts" id="${id}" class="form-select">
-					${values.map(function(value) {
-						return `<option value="${value.value}">${value.display}</option>`
-					}).join("")}
-			  </select>`);
-		}
-
-		window.TextInputOption = function(title, id, placeholder, maxlength, onclick) {
-			return baseOptionDiv
-			(`<span>${title}</span>
-			  <div class="input-group">
-				 <input class="form-control shadow-none" id="${id}" maxlength="${maxlength}" placeholder="${placeholder}" type="text">
-				 <button class="btn btn-primary shadow-none" id="rowsButton" onclick="${onclick}">Set</button>
-			  </div>`);
-		}
-
-		window.CheckboxOption = function(title, optionID, defaultChecked=false) {
-			return baseOptionDiv(`<input type="checkbox" ${defaultChecked?"checked='checked'" : ""} id="${optionID}"><span style="padding: 10px">${title}</span>`);
-		}
-
-		// Holy crap this took me way too long
-		document.querySelectorAll(".navbar-toggler")[0].style['border-color'] = "rgba(0,0,0,0.5)";
-		document.querySelectorAll(".navbar-toggler")[0].style['width'] = "5%";
-
-		/*
-		const offcanvasNavbar = document.getElementById("#offcanvasNavbar");
-		const offcanvasOptions = 
-		offcanvasNavbar.cloneNode(true);
-
-
-		document.querySelectorAll("#offcanvasNavbar").clone().attr("id", "offcanvasOptions").width("400px").insertAfter("#offcanvasNavbar");
-		document.querySelectorAll("#offcanvasOptions").children(".offcanvas-header").children("#offcanvasNavbarLabel").html("Options");
-		document.querySelectorAll("#offcanvasOptions").children(".offcanvas-body").children().remove();
-
-		addOption(SelectOption("Ladder Font", "ladderFonts", [
-			{display: "Default", value: ""},
-			{display: "BenchNine", value: "BenchNine"},
-			{display: "Roboto", value: "Roboto"},
-			{display: "Lato", value: "Lato"},
-		]))
-		addOption(TextInputOption("Ladder Rows", "rowsInput", "# of rows, min 10, default 30", "4", "setLadderRows()"))
-		addOption(SelectOption("Leader Multi Requirement", "leadermultimode", [
-			{display: "[524288 x🟩]", value: "Both"},
-			{display: "[x🟩 / x🟥]", value: "Square"},
-			{display: "[524288]", value: "Number"},
-			{display: "Disabled", value: "Disabled"},
-		]))
-		//addOption(TextInputOption("Simulation Timeout", "simulationTimeout", "Max simulation runtime in ms", "3", "setSimulationTimeout()"))
-*/
-
 		var linkTag = document.createElement('link');
 		linkTag.rel = "stylesheet";
 		linkTag.href = "https://fonts.googleapis.com/css2?family=BenchNine:wght@400&display=swap"
 		document.body.appendChild(linkTag);
-/*
-		document.querySelector("#ladderFonts").addEventListener('change',function(){
-			var input = document.querySelector("#ladderFonts").value;
-			switch (input) {
-				case "BenchNine":
-					$("table.table.table-sm.caption-top.table-borderless").css("font-family","'BenchNine', sans-serif");
-					break;
-				case "Roboto":
-					$("table.table.table-sm.caption-top.table-borderless").css("font-family","'Roboto', sans-serif");
-					break;
-				case "Lato":
-					$("table.table.table-sm.caption-top.table-borderless").css("font-family","'Lato', sans-serif");
-					break;
-				default:
-					$("table.table.table-sm.caption-top.table-borderless").css("font-family","");
-					break;
-			}
-		});
-*/
+
 		window.updateLadderLastValue=0;
 		setInterval(function(){
 			let currentValue=store.state.ladder.rankers.filter(r=>r.growing)[0]?.points.toNumber();
@@ -1113,4 +953,3 @@
 		},100);
 
 	},waitingTime);
-// hi from discord
