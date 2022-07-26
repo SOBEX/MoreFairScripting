@@ -12,8 +12,8 @@
 //support subscribing to multiple actions
 
 window.sobSetup=function(){
-   window.sobStore=window.store;
-   window.sobStore._actions={'setupConnection':[],'setupGame':[],'setupChat':[],'incrementHighestLadder':[],'ladder/setup':[],'ladder/handleLadderEvent':[],'ladder/handleGlobalEvent':[],'ladder/handlePrivateEvent':[],'ladder/calculate':[],'ladder/handleEvent':[],'ladder/stats/calculate':[],'mod/searchName':[]};
+   Fair.register(api=>window.sobStore=api);
+   window.sobStore_actions={'setupConnection':[],'setupGame':[],'setupChat':[],'incrementHighestLadder':[],'ladder/setup':[],'ladder/handleLadderEvent':[],'ladder/handleGlobalEvent':[],'ladder/handlePrivateEvent':[],'ladder/calculate':[],'ladder/handleEvent':[],'ladder/stats/calculate':[],'mod/searchName':[]};
    window.sobFunctions={};
    window.sobData={};
    window.sobSettings={};
@@ -24,7 +24,7 @@ window.sobSetup=function(){
       if(!('id'in module))throw 'error: id missing';
       const id=module.id;
       const action='action'in module?module.action:'ladder/calculate';
-      if(!(action in window.sobStore._actions))throw 'error: action invalid';
+      if(!(action in window.sobStore_actions))throw 'error: action invalid';
       const noop=function(e){};
       const flexitem='flexitem'in module?module.flexitem:noop;
       const data='data'in module?module.data:noop;
@@ -42,9 +42,9 @@ window.sobSetup=function(){
       if(!(action in window.sobFunctions)){
          window.sobFunctions[action]=[];
          const sobBeforeWrapper=function(e){window.sobFunctions[action].forEach(m=>m.before(e));};
-         window.sobStore._actions[action].unshift(sobBeforeWrapper);
+         window.sobStore_actions[action].unshift(sobBeforeWrapper);
          const sobAfterWrapper=function(e){window.sobFunctions[action].forEach(m=>m.after(e));};
-         window.sobStore._actions[action].push(sobAfterWrapper);
+         window.sobStore_actions[action].push(sobAfterWrapper);
       };
       window.sobFunctions[action].push({'id':id,'before':before,'after':after});
    };
@@ -67,15 +67,14 @@ window.sobSetup=function(){
    window.sobResetupInterval=setInterval(window.sobResetup,1000);
    window.sobTickDetectLastValue=0;
    window.sobTickDetect=function(){
-      let currentValue=store.state.ladder.rankers.filter(r=>r.growing)[0]?.points.toNumber();
+      let currentValue=window.sobStore.state.ladder.rankers.filter(r=>r.growing)[0]?.points.toNumber();
       if(currentValue&&window.sobTickDetectLastValue!=currentValue){
          window.sobTickDetectLastValue=currentValue;
-         for(a in window.sobStore._actions){window.sobStore._actions[a].forEach(m=>m({'message':{'delta':1}}))};
+         for(a in window.sobStore_actions){window.sobStore_actions[a].forEach(m=>m({'message':{'delta':1}}))};
       };
    };
    window.sobTickDetectInterval=setInterval(window.sobTickDetect,100);
 };
-window.sobSetup();
 
 window.sobTicker={
    id:'sobTicker',
@@ -128,7 +127,6 @@ window.sobTicker={
       },window.sobSettings.tickerDelay);
    },
 };
-window.sobRegister(window.sobTicker);
 
 window.sobSimExport={
    id:'sobSimExport',
@@ -164,11 +162,11 @@ window.sobSimExport={
       "use strict";
       const space=' ';
       const endline='\r\n';
-      let string=window.store.state.ladder.yourRanker.accountId+space/*+store.state.ladder.basePointsToPromote.m+'e'+store.state.ladder.basePointsToPromote.e+space*/+(window.store.state.ladder.number/*+1*/)+space+window.store.state.ladder.rankers.length+endline;
-      window.store.state.ladder.rankers.forEach(function(r){
+      let string=window.sobStore.state.ladder.yourRanker.accountId+space/*+store.state.ladder.basePointsToPromote.m+'e'+store.state.ladder.basePointsToPromote.e+space*/+(window.sobStore.state.ladder.number/*+1*/)+space+window.sobStore.state.ladder.rankers.length+endline;
+      window.sobStore.state.ladder.rankers.forEach(function(r){
          string+=(r.growing?'1':'0')+space+r.rank+space+r.accountId+space+r.bias+space+r.multi+space+Math.round(r.power)+space+Math.round(r.points)+space;
          if(r.timesAsshole>0){
-            string+='('+r.timesAsshole+')'+window.store.state.settings.assholeTags[r.timesAsshole]+space;
+            string+='('+r.timesAsshole+')'+window.sobStore.state.settings.assholeTags[r.timesAsshole]+space;
          };
          string+=r.username.replace(/[\t\n\v\f\r]/g,'')+endline;
       });
@@ -180,7 +178,6 @@ window.sobSimExport={
       window.sobData.simExportActive=window.sobData.simExportCheckboxLogActive.checked;
    },
 };
-window.sobRegister(window.sobSimExport);
 
 window.sobGraper={
    id:'sobGraper',
@@ -199,12 +196,11 @@ window.sobGraper={
    },
    after:function(e){
       "use strict";
-      if(window.sobData.graperCheckboxActive.checked&&window.store.state.ladder.yourRanker.growing&&window.store.state.ladder.yourRanker.rank<window.store.state.ladder.rankers.length){
+      if(window.sobData.graperCheckboxActive.checked&&window.sobStore.state.ladder.yourRanker.growing&&window.sobStore.state.ladder.yourRanker.rank<window.sobStore.state.ladder.rankers.length){
          window.sobData.graperAlert.play();
       };
    },
 };
-window.sobRegister(window.sobGraper);
 
 window.sobEventerLadder={
    id:'sobEventerLadder',
@@ -246,26 +242,11 @@ window.sobEventer={
       console.log('ladder/handleEvent:',e);
    },
 };
-//window.sobRegister(window.sobEventerLadder);
-//window.sobRegister(window.sobEventerGlobal);
-//window.sobRegister(window.sobEventerPrivate);
-//window.sobRegister(window.sobEventerCalculate);
-//window.sobRegister(window.sobEventer);
 
-
-
-
-
-
-
-window.sobData.followerBias=new Audio('https://assets.mixkit.co/sfx/preview/mixkit-bonus-earned-in-video-game-2058.mp3');
-window.sobData.followerMulti=new Audio('https://assets.mixkit.co/sfx/preview/mixkit-sci-fi-error-alert-898.mp3');
-window.sobSettings.followerId=-1;
-window.sobSettings.followerSilent=false;
 window.sobFollower=function(e){
    "use strict";
    if(window.sobSettings.followerId<0){if(!window.sobSettings.followerSilent)console.log('skipped: not following');return;};
-   if(!window.store.state.ladder.yourRanker.growing){if(!window.sobSettings.followerSilent)console.log('skipped: not growing');return;};
+   if(!window.sobStore.state.ladder.yourRanker.growing){if(!window.sobSettings.followerSilent)console.log('skipped: not growing');return;};
    if(window.sobSettings.followerId===0){
       if(!document.getElementsByClassName('btn-group')[1].children[0].classList.contains('disabled')){
          window.sobData.followerMulti.play();
@@ -280,9 +261,9 @@ window.sobFollower=function(e){
       };
       if(!window.sobSettings.followerSilent)console.log('cant bias');
    }else{
-      window.store.state.ladder.rankers.forEach(function(r){
+      window.sobStore.state.ladder.rankers.forEach(function(r){
          if(r.accountId!=window.sobSettings.followerId)return;
-         let s=window.store.state.ladder.yourRanker;
+         let s=window.sobStore.state.ladder.yourRanker;
          if(!window.sobSettings.followerSilent)console.log('found '+r.username+'#'+r.accountId+' at [+'+r.bias+' x'+r.multi+'], self at [+'+s.bias+' x'+s.multi+']');
          if(s.multi<r.multi){
             if(!document.getElementsByClassName('btn-group')[1].children[0].classList.contains('disabled')){
@@ -303,4 +284,21 @@ window.sobFollower=function(e){
       });
    };
 };
-window.sobFunctions['ladder/calculate'].push({'id':'sobFollower','before':function(e){},'after':window.sobFollower});
+window.sobRegisterSobFollower=function(){
+   window.sobData.followerBias=new Audio('https://assets.mixkit.co/sfx/preview/mixkit-bonus-earned-in-video-game-2058.mp3');
+   window.sobData.followerMulti=new Audio('https://assets.mixkit.co/sfx/preview/mixkit-sci-fi-error-alert-898.mp3');
+   window.sobSettings.followerId=-1;
+   window.sobSettings.followerSilent=false;
+   window.sobFunctions['ladder/calculate'].push({'id':'sobFollower','before':function(e){},'after':window.sobFollower});
+};
+
+window.sobSetup();
+window.sobRegister(window.sobTicker);
+window.sobRegister(window.sobSimExport);
+window.sobRegister(window.sobGraper);
+//window.sobRegister(window.sobEventerLadder);
+//window.sobRegister(window.sobEventerGlobal);
+//window.sobRegister(window.sobEventerPrivate);
+//window.sobRegister(window.sobEventerCalculate);
+//window.sobRegister(window.sobEventer);
+window.sobRegisterSobFollower();
