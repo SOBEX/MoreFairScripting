@@ -18,7 +18,7 @@
 	// Simulation by Tree#1019
 	// Some more contributions by Spyrfyr & Boozle & Bender & MobileChecker & Beverice
 
-
+	Fair.register(api=>window.store=api);
 
 	// Time to wait (in milliseconds) before running the script to give the page time to load properly
 	waitingTime = 5000;
@@ -108,7 +108,7 @@
 		let noActionTakenTimeTime;
 		let actionTakenTime;
 
-		const myID = store.state.user.accountId;
+		const myID = window.store.state.ladder.yourRanker.accountId;
 		let basePointsToPromote;
 		let simulatedRanker = myID;
 
@@ -124,7 +124,7 @@
 		let simResultsText = "";
 		let rowText = "";
 
-		let topRanker = store.state.ladder.rankers[0];
+		let topRanker = window.store.state.ladder.rankers[0];
 		let topRankerVinegar = 1;
 		let topRankerSeconds = 0;
 
@@ -161,7 +161,7 @@
 		thead.innerHTML ="<tr class='thead-light' style='background-color: #ebede9;'><th>#</th><th>Stats</th><th>Username</th><th class='text-end'>Gain</th><th class='text-end'>Power</th><th class='text-end'>Power Diff</th><th class='text-end'>ETA to You</th><th class='text-end'>Points</th></tr>";
 		newRankerTable.style['margin-bottom']='0';
 
-		numberFormatter = store.state.numberFormatter;
+		//numberFormatter = window.store.state.numberFormatter;
 
 		/* Utility functions */
 		// Finds and returns an Object's key by its value
@@ -257,13 +257,13 @@
 			const yourSimulatedRanker = simulatedLadderData.rankers.filter(obj => obj.you)[0];
 
 			/* Add in approximate times */
-			for (const ranker of store.state.ladder.rankers) {
+			for (const ranker of window.store.state.ladder.rankers) {
 				const simulatedRanker = simulatedLadderData.rankers.filter(obj => obj.accountId === ranker.accountId)[0];
 
 				// Time to #1
 				if (!timeToOneMap.has(ranker.accountId) && ranker.growing) {
 					// Time to reach minimum promotion points of the ladder
-					if (store.state.ladder.rankers[0].points.lessThan(basePointsToPromote)) {
+					if (window.store.state.ladder.rankers[0].points.lessThan(basePointsToPromote)) {
 						const timeToLadder = timeSimulated + solveQuadratic(getAcceleration(simulatedRanker)/2, simulatedRanker.power, basePointsToPromote.mul(-1).add(simulatedRanker.points));
 						timeToOneMap.set(ranker.accountId, {time: timeToLadder, approximate: true});
 					}
@@ -307,7 +307,7 @@
 				if (obj.approximate) {
 					outputStr += "<i>";
 				}
-				if (store.state.ladder.rankers[0].points.lessThan(basePointsToPromote)) {
+				if (window.store.state.ladder.rankers[0].points.lessThan(basePointsToPromote)) {
 					outputStr += "L";
 				}
 
@@ -330,7 +330,7 @@
 					outputStr += "<i>";
 				}
 				// store time to leave the bottom (does not necessarily match totalBottomTime)
-				if (youOrder == 1 && store.state.ladder.yourRanker.rank == store.state.ladder.rankers.length) {
+				if (youOrder == 1 && window.store.state.ladder.yourRanker.rank == window.store.state.ladder.rankers.length) {
 					leaveBottomTime = secondsToHms(obj.time,false);
 					myfloortime  = secondsToHms(obj.time,false);
 				}
@@ -355,9 +355,9 @@
 		window.handleLadderUpdates = function(message) {
 		//window.store._actions['ladder/update'][0] = function(eh) {
 			if (message) {
-				eh.message.events.forEach(e => store._actions['ladder/handleEvent'][0]({type:'handleEvent',event:e,stompClient:eh.stompClient}))
+				eh.message.events.forEach(e => window.store._actions['ladder/handleEvent'][0]({type:'handleEvent',event:e,stompClient:eh.stompClient}))
 			}
-			store._mutations['ladder/calculate'][0](eh.message.secondsPassed);
+			window.store._mutations['ladder/calculate'][0](eh.message.secondsPassed);
 			tickTimes.push(eh.message.secondsPassed);
 			if (tickTimes.length > ticksToCount) {
 				tickTimes.shift();
@@ -410,10 +410,10 @@
 		let highestsensiblebias;
 
 		window.updateLadder = function() {
-			pointsForManualPromote = store.state.ladder.stats.pointsNeededForManualPromote;
-			basePointsToPromote = store.state.ladder.basePointsToPromote;
+			pointsForManualPromote = window.store.state.ladder.stats.pointsNeededForManualPromote;
+			basePointsToPromote = window.store.state.ladder.basePointsToPromote;
 			highestsensiblebias = 0;
-			while (Math.pow(store.state.ladder.number + 1, highestsensiblebias + 1) < pointsForManualPromote * 0.5) {
+			while (Math.pow(window.store.state.ladder.number + 1, highestsensiblebias + 1) < pointsForManualPromote * 0.5) {
 				highestsensiblebias = highestsensiblebias + 1;
 			}
 			highestsensiblebias -= 1;
@@ -422,8 +422,9 @@
 
 			// Calculate vinegar decay of top ranker
 			let buttonRowSecondColumn = document.getElementsByClassName('col-6')[1];
-			buttonRowSecondColumn.innerHTML = "Round Base Point Requirement: "+numberFormatter.formatFull(store.state.settings.pointsForPromote)+"<br/>Ladder Base Point Requirement: " + numberFormatter.formatFull(store.state.ladder.basePointsToPromote) + "<br/>";
-			if (store.state.ladder.rankers[0].accountId === topRanker.accountId && store.state.ladder.rankers[0].growing && store.state.ladder.rankers[0].points - basePointsToPromote >= 0 && store.state.ladder.rankers.length >= Math.max(store.state.settings.minimumPeopleForPromote,store.state.ladder.number)) {
+			//buttonRowSecondColumn.innerHTML = "Round Base Point Requirement: "+window.store.state.settings.pointsForPromote+"<br/>Ladder Base Point Requirement: " + window.store.state.ladder.basePointsToPromote + "<br/>";
+			buttonRowSecondColumn.innerHTML = "Ladder Base Point Requirement: " + Math.round(window.store.state.ladder.basePointsToPromote).toLocaleString() + "<br/>";
+			if (window.store.state.ladder.rankers[0].accountId === topRanker.accountId && window.store.state.ladder.rankers[0].growing && window.store.state.ladder.rankers[0].points - basePointsToPromote >= 0 && window.store.state.ladder.rankers.length >= Math.max(window.store.state.settings.minimumPeopleForPromote,window.store.state.ladder.number)) {
 				// Top Ranker has not changed, and would be able to promote
 				topRankerVinegar = topRankerVinegar * 0.9975; // decay by 0.25%
 				topRankerSeconds += 1;
@@ -431,7 +432,7 @@
 			}
 			else {
 				// Top Ranker has changed
-				topRanker = store.state.ladder.rankers[0];
+				topRanker = window.store.state.ladder.rankers[0];
 				topRankerVinegar = 1;
 				topRankerSeconds = 0;
 				buttonRowSecondColumn.innerHTML += "Vinegar decay: n/a";
@@ -439,7 +440,7 @@
 
 			// Build new ranker table
 			let rankersToShow = [];
-			for (const [rank, ranker] of store.state.ladder.rankers.entries()) {
+			for (const [rank, ranker] of window.store.state.ladder.rankers.entries()) {
 				rankersToShow.push(ranker);
 			}
 			document.getElementById("newTable").innerHTML = "";
@@ -456,17 +457,17 @@
 				else if (ranker.bias === 0 && ranker.multi === 1) {
 					rowText += "color:"+zombieText+";background-color:"+zombie;
 				}
-				else if (ranker.multi > store.state.ladder.yourRanker.multi) {
+				else if (ranker.multi > window.store.state.ladder.yourRanker.multi) {
 					rowText += "background-color:"+hMulti;
 				}
-				else if (ranker.multi === store.state.ladder.yourRanker.multi) {
-					if (store.state.ladder.yourRanker.bias === ranker.bias) {
+				else if (ranker.multi === window.store.state.ladder.yourRanker.multi) {
+					if (window.store.state.ladder.yourRanker.bias === ranker.bias) {
 						rowText += "background-color:"+sMulti_sBias;
 					}
-					else if (store.state.ladder.yourRanker.bias > ranker.bias) {
+					else if (window.store.state.ladder.yourRanker.bias > ranker.bias) {
 						rowText += "background-color:"+sMulti_lBias;
 					}
-					else if (store.state.ladder.yourRanker.bias < ranker.bias) {
+					else if (window.store.state.ladder.yourRanker.bias < ranker.bias) {
 						rowText += "background-color:"+sMulti_hBias;
 					}
 				}
@@ -483,8 +484,8 @@
 				rowText += "</td>";
 
 				// Multi & Bias
-				let biasCost = Math.pow(store.state.ladder.number + 1, ranker.bias + 1);
-				let multiCost = Math.pow(store.state.ladder.number + 1, ranker.multi + 1);
+				let biasCost = Math.pow(window.store.state.ladder.number + 1, ranker.bias + 1);
+				let multiCost = Math.pow(window.store.state.ladder.number + 1, ranker.multi + 1);
 				rowText += "<td>";
 				if (ranker.growing) {
 					if (ranker.points.greaterThanOrEqualTo(biasCost)) {
@@ -531,7 +532,7 @@
 				// Power Diff
 				rowText += "<td class='text-end'>";
 				if (timeToYouMap.has(ranker.accountId)) {
-					rowText += Math.round(store.state.ladder.yourRanker.power - ranker.power).toLocaleString();
+					rowText += Math.round(window.store.state.ladder.yourRanker.power - ranker.power).toLocaleString();
 				}
 				rowText += "</td>";
 
@@ -552,25 +553,25 @@
 
 
 			// Colorize background & update title based on ranker state
-			let newDocumentTitle = "#" + store.state.ladder.yourRanker.rank;
-			if (store.state.ladder.yourRanker.rank == store.state.ladder.rankers.length) {
+			let newDocumentTitle = "#" + window.store.state.ladder.yourRanker.rank;
+			if (window.store.state.ladder.yourRanker.rank == window.store.state.ladder.rankers.length) {
 				document.getElementsByTagName('body')[0].style.backgroundColor = farmingGrapes;
 				document.getElementsByTagName('body')[0].style['background-image'] = 'https://w7.pngwing.com/pngs/113/170/png-transparent-bender-korra-roger-zoidberg-character-bender.png';
 				newDocumentTitle +=  " F: " + leaveBottomTime;
 				myLadderState = 1;
 			}
-			else if (store.state.ladder.yourRanker.rank == 1 // top of the ladder
-			&& store.state.ladder.yourRanker.growing // not promoted
-			&& store.state.ladder.number != store.state.settings.assholeLadder) { // not in asshole ladder
+			else if (window.store.state.ladder.yourRanker.rank == 1 // top of the ladder
+			&& window.store.state.ladder.yourRanker.growing // not promoted
+			&& window.store.state.ladder.number != window.store.state.settings.assholeLadder) { // not in asshole ladder
 				document.getElementsByTagName('body')[0].style.backgroundColor = topIsLava;
-				if (store.state.ladder.yourRanker.points > pointsForManualPromote + store.state.ladder.yourRanker.power) { // promotion threshold crossed (+1 tick to not trigger with autopromote)
+				if (window.store.state.ladder.yourRanker.points > pointsForManualPromote + window.store.state.ladder.yourRanker.power) { // promotion threshold crossed (+1 tick to not trigger with autopromote)
 					pw.play(); // play alarm continuously if promotion is possible, unless in AH
 				}
 				newDocumentTitle += " TOP IS LAVA!!!";
 				myLadderState = 3;
 			}
 			else {
-				if (myLadderState == 1 && store.state.ladder.yourRanker.growing) { // play alarm once if losing the bottom
+				if (myLadderState == 1 && window.store.state.ladder.yourRanker.growing) { // play alarm once if losing the bottom
 					pw.play();
 				}
 				document.getElementsByTagName('body')[0].style.backgroundColor = boringState;
@@ -626,10 +627,10 @@
 			const simulationBehavior = SimulationBehaviors[document.querySelector('#simulationBehavior').value];
 			const simulationAction = SimulationActions[document.querySelector('#simulationAction').value];
 			const simulationTimeout = simulationTimeoutOptions[document.querySelector('#simulationTimeout').value];
-			//pointsForManualPromote = store.state.settings.pointsForManualPromote.mul(store.state.ladder.number);
-			pointsForManualPromote = store.state.ladder.stats.pointsNeededForManualPromote;
+			//pointsForManualPromote = window.store.state.settings.pointsForManualPromote.mul(window.store.state.ladder.number);
+			pointsForManualPromote = window.store.state.ladder.stats.pointsNeededForManualPromote;
 			// Initialize arrays
-			simulatedLadderData = JSON.parse(JSON.stringify(store.state.ladder));
+			simulatedLadderData = JSON.parse(JSON.stringify(window.store.state.ladder));
 			let timeToYouSigns = new Map();
 			timeToOneMap.clear();
 			timeToYouMap.clear();
@@ -666,7 +667,7 @@
 				} else if (simulationAction === SimulationActions.GRAPE) {
 					simResultsText += "assuming graping";
 					simulatedLadderData.rankers.filter(x => x.accountId == simulatedRanker)[0].points = 0;
-					const multiCost = Math.pow(store.state.ladder.number + 1, simulatedLadderData.rankers.filter(x => x.accountId == simulatedRanker)[0].multi + 1);
+					const multiCost = Math.pow(window.store.state.ladder.number + 1, simulatedLadderData.rankers.filter(x => x.accountId == simulatedRanker)[0].multi + 1);
 					if(simulatedLadderData.rankers.filter(x => x.accountId == simulatedRanker)[0].power >= multiCost) {
 						simulatedLadderData.rankers.filter(x => x.accountId == simulatedRanker)[0].power = 0;
 						simulatedLadderData.rankers.filter(x => x.accountId == simulatedRanker)[0].bias = 0;
@@ -795,18 +796,18 @@
 						// #1 Autopromotes
 						else if (simulationBehavior === SimulationBehaviors.AUTOPROMOTE
 							// If the real first ranker is sitting at #1 growing and able to promote, they are not autopromoting
-							&& !(store.state.ladder.rankers[0].accountId === firstRanker.accountId
-							&& store.state.ladder.rankers[0].points.greaterThanOrEqualTo(basePointsToPromote))
+							&& !(window.store.state.ladder.rankers[0].accountId === firstRanker.accountId
+							&& window.store.state.ladder.rankers[0].points.greaterThanOrEqualTo(basePointsToPromote))
 							) {
 								firstRanker.growing = false;
 						}
 						else if (simulationBehavior === SimulationBehaviors.MANUALPROMOTE
 							// Test for manual promote in AH ==> doesnt work
-							&& !(store.state.ladder.rankers[0].accountId === firstRanker.accountId
-							&& store.state.ladder.rankers[0].points.greaterThanOrEqualTo(basePointsToPromote))
+							&& !(window.store.state.ladder.rankers[0].accountId === firstRanker.accountId
+							&& window.store.state.ladder.rankers[0].points.greaterThanOrEqualTo(basePointsToPromote))
 							) {
 								//timeSimulated += 30;
-								timeSimulated += store.state.settings.manualPromoteWaitTime;
+								timeSimulated += window.store.state.settings.manualPromoteWaitTime;
 								//timeToOneMap.set(firstRanker.accountId, {time: timeSimulated, order: ++numberHitOne, approximate: false});
 								firstRanker.growing = false;
 						}
@@ -828,19 +829,19 @@
 			let myTimeToPromo = timeToOneMap.get(myID).time;
 			let myPromotionTime = new Date();
 			myPromotionTime.setSeconds(myPromotionTime.getSeconds() + myTimeToPromo)
-			let simMulti = store.state.ladder.yourRanker.multi;
-			let simBias = store.state.ladder.yourRanker.bias;
-			let simPower = store.state.ladder.yourRanker.power;
-			let simPoints = store.state.ladder.yourRanker.points;
-			let simRank = store.state.ladder.yourRanker.rank;
+			let simMulti = window.store.state.ladder.yourRanker.multi;
+			let simBias = window.store.state.ladder.yourRanker.bias;
+			let simPower = window.store.state.ladder.yourRanker.power;
+			let simPoints = window.store.state.ladder.yourRanker.points;
+			let simRank = window.store.state.ladder.yourRanker.rank;
 
 			timeToOneMap.forEach((obj, accountId) => {
-				if(store.state.ladder.rankers.filter(x => x.accountId == accountId)[0].growing === false) {
+				if(window.store.state.ladder.rankers.filter(x => x.accountId == accountId)[0].growing === false) {
 					return;
 				}
 				const ranker = simulatedLadderData.rankers.filter(x => x.accountId === accountId)[0];
 
-				const currentRanker = store.state.ladder.rankers.filter(x => x.accountId == accountId)[0];
+				const currentRanker = window.store.state.ladder.rankers.filter(x => x.accountId == accountId)[0];
 
 				let currentMulti = currentRanker.multi;
 				let currentBias = currentRanker.bias;
@@ -929,7 +930,7 @@
 			}
 
 			if (current) {
-				simResultsText += "<table cellpadding='3' style='margin-top:6px;'><tr style='font-weight: bold; font-size: 12px;'><td></td><td>Action</td><td style='padding-right: 60px;'>No changes</td><td style='font-weight:bold;' colspan='2'>Cost for bias</td></tr><tr style='font-size: 12px;'><td style='font-weight: bold;'>Promotion (local time)</td><td>"+promotime1+"</td><td>"+promotime2+"</td><td>"+String(highestsensiblebias - 3).padStart(3, "+0")+"</td><td class='text-end'>"+Math.pow(store.state.ladder.number + 1, highestsensiblebias - 3).toLocaleString()+"</td></tr><tr style='font-size: 12px;'><td style='font-weight: bold;'>Time "+ (noActionTakenTimeTime > actionTakenTime ? "gain" : "loss") +"</td><td>"+gaintime1+"</td><td>"+gaintime2+"</td><td>"+String(highestsensiblebias - 2).padStart(3, "+0")+"</td><td class='text-end'>"+Math.pow(store.state.ladder.number + 1, highestsensiblebias - 2).toLocaleString()+"</td></tr><tr style='font-size: 12px;'><td style='font-weight: bold;'>Floor time</td><td>"+floortime1+"</td><td>"+floortime2+"</td><td>"+String(highestsensiblebias - 1).padStart(3, "+0")+"</td><td class='text-end'>"+Math.pow(store.state.ladder.number + 1, highestsensiblebias - 1).toLocaleString()+"</td></tr><tr style='font-size: 12px;'><td style='font-weight: bold;'>Top time</td><td>"+toptime1+"</td><td>"+toptime2+"</td><td>"+String(highestsensiblebias).padStart(3, "+0")+"</td><td class='text-end'>"+Math.pow(store.state.ladder.number + 1, highestsensiblebias).toLocaleString()+"</td></tr></table>";
+				simResultsText += "<table cellpadding='3' style='margin-top:6px;'><tr style='font-weight: bold; font-size: 12px;'><td></td><td>Action</td><td style='padding-right: 60px;'>No changes</td><td style='font-weight:bold;' colspan='2'>Cost for bias</td></tr><tr style='font-size: 12px;'><td style='font-weight: bold;'>Promotion (local time)</td><td>"+promotime1+"</td><td>"+promotime2+"</td><td>"+String(highestsensiblebias - 3).padStart(3, "+0")+"</td><td class='text-end'>"+Math.pow(window.store.state.ladder.number + 1, highestsensiblebias - 3).toLocaleString()+"</td></tr><tr style='font-size: 12px;'><td style='font-weight: bold;'>Time "+ (noActionTakenTimeTime > actionTakenTime ? "gain" : "loss") +"</td><td>"+gaintime1+"</td><td>"+gaintime2+"</td><td>"+String(highestsensiblebias - 2).padStart(3, "+0")+"</td><td class='text-end'>"+Math.pow(window.store.state.ladder.number + 1, highestsensiblebias - 2).toLocaleString()+"</td></tr><tr style='font-size: 12px;'><td style='font-weight: bold;'>Floor time</td><td>"+floortime1+"</td><td>"+floortime2+"</td><td>"+String(highestsensiblebias - 1).padStart(3, "+0")+"</td><td class='text-end'>"+Math.pow(window.store.state.ladder.number + 1, highestsensiblebias - 1).toLocaleString()+"</td></tr><tr style='font-size: 12px;'><td style='font-weight: bold;'>Top time</td><td>"+toptime1+"</td><td>"+toptime2+"</td><td>"+String(highestsensiblebias).padStart(3, "+0")+"</td><td class='text-end'>"+Math.pow(window.store.state.ladder.number + 1, highestsensiblebias).toLocaleString()+"</td></tr></table>";
 			}
 			simResultsInner.innerHTML = simResultsText;
 
@@ -945,7 +946,7 @@
 
 		window.updateLadderLastValue=0;
 		setInterval(function(){
-			let currentValue=store.state.ladder.rankers.filter(r=>r.growing)[0]?.points.toNumber();
+			let currentValue=window.store.state.ladder.rankers.filter(r=>r.growing)[0]?.points.toNumber();
 			if(currentValue&&window.updateLadderLastValue!=currentValue){
 				window.updateLadderLastValue=currentValue;
 				updateLadder();
