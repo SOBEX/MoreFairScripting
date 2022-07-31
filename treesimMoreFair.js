@@ -368,12 +368,12 @@
 			averageTickTime = tickTimes.reduce((a, b) => a + b) / tickTimes.length;
 		}
 
-		const mainColumn = document.getElementsByClassName('col-7')[0];
+		const mainColumn = document.getElementById('app').children[2].children[0].children[0].children[0];
 		mainColumn.style['width']='40%';
 		mainColumn.style['padding-right']='5px';
 		mainColumn.style['font-size']='90%';
 
-		const chatColumn = document.getElementsByClassName('chat-window')[0].parentNode;
+		const chatColumn = document.getElementById('app').children[2].children[0].children[0].children[1];
 		chatColumn.style['width']='31%';
 		chatColumn.style['padding-right']='0';
 		chatColumn.style['padding-left']='0';
