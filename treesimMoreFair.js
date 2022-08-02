@@ -63,7 +63,11 @@
 			a: 200,
 			b: 400,
 			c: 600,
-			d: 800
+			d: 800,
+			e: 1200,
+			f: 2000,
+			g: 4000,
+			h: 8000
 		}
 
 		if (typeof unsafeWindow !== 'undefined') {
@@ -96,7 +100,7 @@
 
 		let tickTimes = [];
 		const ticksToCount = 10;
-		let averageTickTime = 1.0;
+		let averageTickTime = 1;
 
 		let timeToOneMap = new Map();
 		let timeToYouMap = new Map();
@@ -161,7 +165,7 @@
 		thead.style["z-index"] = "999";
 		thead.style["position"] = "sticky";
 		thead.style["top"] = "0";
-		thead.innerHTML ="<tr class='thead-light' style='background-color: #ebede9;'><th>#</th><th>Stats</th><th>Username</th><th class='text-end'>Gain</th><th class='text-end'>Power</th><th class='text-end'>Power Diff</th><th class='text-end'>ETA to You</th><th class='text-end'>Points</th></tr>";
+		thead.innerHTML ="<tr class='thead-light' style='background-color: #ebede9;'><th>#</th><th>Stats</th><th>Name</th><th class='text-end'>Gain</th><th class='text-end'>Power</th><th class='text-end'>Power Diff</th><th class='text-end'>ETA to You</th><th class='text-end'>Points</th></tr>";
 		newRankerTable.style['margin-bottom']='0';
 
 		//numberFormatter = window.store.state.numberFormatter;
@@ -350,13 +354,14 @@
 		window.sanitize = function(username) {
 			username = username.replaceAll('<', '\u{226E}');
 			username = username.replaceAll('>', '\u{226F}');
-			return username;
+			return username.substring(0,21);
 		}
 
 		/* Overrides built-in handleLadderUpdates to update tick length.
 		*/
 		window.handleLadderUpdates = function(message) {
 		//window.store._actions['ladder/update'][0] = function(eh) {
+			console.log("i am here");
 			if (message) {
 				eh.message.events.forEach(e => window.store._actions['ladder/handleEvent'][0]({type:'handleEvent',event:e,stompClient:eh.stompClient}))
 			}
@@ -384,7 +389,7 @@
 		middleColumn.style['width']='29%';
 		middleColumn.style['padding-right']='0';
 
-		let simOptionshtml = "<div id='simOptions' style='padding: 8px 0px; width: 100%; font-size: 12px; '><p style='font-weight: bold; margin-bottom: 6px;'>Simulation options</p><div style='float:left; font-size: 10px; width:33%; padding-right:3%;'><span>Simulate Action</span><select name='fonts' id='simulationAction' class='form-select' style='height: 25px; font-size: 10px; padding: 0 2.25rem 0 0.75rem; margin-top:3px;'><option value='BIAS'>Bias</option><option value='MULTI'>Multi</option><option value='GRAPE'>Grape</option></select></div><div style='float:left; font-size: 10px; width:33%; padding-right:3%;'><span>Simulation Behavior</span><select name='fonts' id='simulationBehavior' class='form-select' style='height: 25px; font-size: 10px; padding: 0 2.25rem 0 0.75rem; margin-top:3px;'><option value='AUTOPROMOTE'>Auto promote</option><option value='WALL'>Wall</option><option value='MANUALPROMOTE'>Manual promote</option></select></div><div style='float:left; font-size: 10px; width:33%; padding-right:3%;'><span>Simulation Timeout (ms)</span><select name='fonts' id='simulationTimeout' class='form-select' style='height: 25px; font-size: 10px; padding: 0 2.25rem 0 0.75rem; margin-top:3px;'><option value='a'>200</option><option value='b'>400</option><option value='c'>600</option><option value='d'>800</option></select></div></div>"
+		let simOptionshtml = "<div id='simOptions' style='padding: 8px 0px; width: 100%; font-size: 12px; '><p style='font-weight: bold; margin-bottom: 6px;'>Simulation options</p><div style='float:left; font-size: 10px; width:33%; padding-right:3%;'><span>Simulate Action</span><select name='fonts' id='simulationAction' class='form-select' style='height: 25px; font-size: 10px; padding: 0 2.25rem 0 0.75rem; margin-top:3px;'><option value='BIAS'>Bias</option><option value='MULTI'>Multi</option><option value='GRAPE'>Grape</option></select></div><div style='float:left; font-size: 10px; width:33%; padding-right:3%;'><span>Simulation Behavior</span><select name='fonts' id='simulationBehavior' class='form-select' style='height: 25px; font-size: 10px; padding: 0 2.25rem 0 0.75rem; margin-top:3px;'><option value='AUTOPROMOTE'>Auto promote</option><option value='WALL'>Wall</option><option value='MANUALPROMOTE'>Manual promote</option></select></div><div style='float:left; font-size: 10px; width:33%; padding-right:3%;'><span>Simulation Timeout (ms)</span><select name='fonts' id='simulationTimeout' class='form-select' style='height: 25px; font-size: 10px; padding: 0 2.25rem 0 0.75rem; margin-top:3px;'><option value='a'>200</option><option value='b'>400</option><option value='c'>600</option><option value='d'>800</option><option value='e'>1200</option><option value='f'>2000</option><option value='g'>4000</option><option value='h'>8000</option></select></div></div>"
 
 		middleColumn.innerHTML = simOptionshtml;
 
@@ -404,11 +409,9 @@
 		insertAfter(simOptions,simResults);
 
 
-		// Your CSS as text
-		var styles = ".message,.message-header,.message-username,.message-date,.message-status,.msgLength,#chatInput,.chatInputPlaceholder{font-size: 80%}.btn{padding:3px 9px}.col-6{padding:0;}.col-5{max-height:107% !important;height:107%;}.w-100 {background-color:#fa9155 !important;}";
-		var styleSheet = document.createElement("style")
-		styleSheet.innerText = styles
-		document.head.appendChild(styleSheet)
+		// Custom CSS
+		var styles = ".message,.message-header,.message-username,.message-date,.message-status,.msgLength,#chatInput,.chatInputPlaceholder{font-size: 80%}.btn{padding:3px 9px}.col-6{padding:0;}.col-5{max-height:107% !important;height:107%;}.w-100 {background-color:#fa9155 !important;} body{cursor:url('data:image/x-icon;base64,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'), auto} button:hover,.btn:hover,select:hover{cursor:url('data:image/x-icon;base64,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'), auto}";
+		var styleSheet = document.createElement("style");styleSheet.innerText = styles;document.head.appendChild(styleSheet);
 
 		let highestsensiblebias;
 
@@ -432,7 +435,7 @@
 				// Top Ranker has not changed, and would be able to promote
 				topRankerVinegar = topRankerVinegar * 0.9975; // decay by 0.25%
 				topRankerSeconds += 1;
-				buttonRowSecondColumn.innerHTML += "Vinegar decay: #" + topRanker.username + "#" + topRanker.accountId + " lost " + Math.round((1-topRankerVinegar)*10000) / 100 + "% (" + topRankerSeconds + "s)";
+				buttonRowSecondColumn.innerHTML += "Vinegar decay: #" + sanitize(topRanker.username) + "#" + topRanker.accountId + " lost " + Math.round((1-topRankerVinegar)*10000) / 100 + "% (" + topRankerSeconds + "s)";
 			}
 			else {
 				// Top Ranker has changed
@@ -567,8 +570,8 @@
 			}
 			else if (window.store.state.ladder.yourRanker.rank == 1 // top of the ladder
 			&& window.store.state.ladder.yourRanker.growing // not promoted
-			&& !window.store.state.ladder.types.includes('ASSHOLE')) { // not in asshole ladder
-			// && window.store.state.ladder.number != window.store.state.settings.assholeLadder) { // not in asshole ladder
+			&& !window.store.state.ladder.types.has('ASSHOLE')) { // not in asshole ladder
+				// && window.store.state.ladder.number != window.store.state.settings.assholeLadder) { // not in asshole ladder
 				document.getElementsByTagName('body')[0].style.backgroundColor = topIsLava;
 				if (window.store.state.ladder.yourRanker.points > pointsForManualPromote + window.store.state.ladder.yourRanker.power) { // promotion threshold crossed (+1 tick to not trigger with autopromote)
 					pw.play(); // play alarm continuously if promotion is possible, unless in AH
@@ -701,8 +704,9 @@
 			});
 
 			const startTime = new Date().getTime();
+			let loops = 0;
 			while (new Date().getTime() - startTime < simulationTimeout && timeToOneMap.size !== simulatedLadderData.rankers.length) {
-
+				loops++;
 				// Find lowest ETA (time until someone somewhere in the ladder will change positions)
 				let minETA = Infinity;
 
@@ -715,9 +719,9 @@
 						let etaToLadder = solveQuadratic(getAcceleration(ranker)/2, ranker.power, basePointsToPromote.mul(-1).add(ranker.points));
 						if (isFinite(etaToLadder)) {
 							// Server works in whole tick increments, so round up to the next number of ticks
-							etaToLadder = Math.ceil(etaToLadder / averageTickTime) * averageTickTime;
+							etaToLadder = Math.ceil(etaToLadder);
 							minETA = Math.min(minETA, etaToLadder);
-							if (minETA <= averageTickTime) {
+							if (minETA <= 1) {
 								break;
 							}
 						}
@@ -730,17 +734,17 @@
 					let etaToNext = findTimeDifference(ranker, simulatedLadderData.rankers[ranker.rank - 2]);
 					if (isFinite(etaToNext)) {
 						// Server works in whole tick increments, so round up to the next number of ticks
-						etaToNext = Math.ceil(etaToNext / averageTickTime) * averageTickTime;
+						etaToNext = Math.ceil(etaToNext);
 						minETA = Math.min(minETA, etaToNext);
-						if (minETA <= averageTickTime) {
+						if (minETA <= 1) {
 							break;
 						}
 					}
 
 				}
 				// Ensure at least 1 tick passes
-				if (minETA < averageTickTime) {
-					minETA = averageTickTime;
+				if (minETA < 1) {
+					minETA = 1;
 				}
 				// Halt if there are no non-rank 1 growers to prevent infinite simulation
 				else if (minETA === Infinity) {
@@ -824,13 +828,14 @@
 					}
 				}
 			}
-
+			console.log("Time to calculate simulation: " + (new Date().getTime() - startTime) + "ms. Number of loops: " + loops + "; average loop time = " + ((new Date().getTime() - startTime) / loops));
+			loops = 0;
 			if (timeToOneMap.size === simulatedLadderData.rankers.length) {
 				simulationFinished = true;
 			}
 
 			simResultsText += " (Simulation complete: " + (simulationFinished ? '\u{1F7E9}' : '\u{1F7E5}') + ")</p>";
-			simResultsText += "<table id='simtable' cellpadding='2' style='width:100%'><colgroup><col width='5%'><col width='12%'><col width='12%'><col width='11%'><col width='10%'><col width='10%'><col width='10%'><col width='25%'><col width='5%'></colgroup><tr style='font-weight: bold; font-size: 10px;'><td style='padding-right: 5px;'></td><td style='padding-right: 5px;'>Time to Promo</td><td style='padding-right: 5px;'>Diff to Promo</td><td style='padding-right: 5px;'>Bi/Mu</td><td style='padding-left: 5px;text-align: right;'>promPower</td><td style='padding-left: 5px;text-align: right;'>curPower</td><td style='padding-left: 5px;text-align: right;'>curPoDiff</td><td style='padding-left: 5px;'>Name</td><td></td></tr>";
+			simResultsText += "<table id='simtable' cellpadding='2' style='width:100%'><colgroup><col width='4%'><col width='12%'><col width='12%'><col width='10%'><col width='9%'><col width='10%'><col width='10%'><col width='29%'><col width='4%'></colgroup><tr style='font-weight: bold; font-size: 10px;'><td style='padding-right: 5px;'>#</td><td style='padding-right: 5px;'>Time to Promo</td><td style='padding-right: 5px;'>Diff to Promo</td><td style='padding-right: 5px;'>Stats</td><td style='padding-left: 5px;text-align: right;'>proPower</td><td style='padding-left: 5px;text-align: right;'>curPower</td><td style='padding-left: 5px;text-align: right;'>curPoDiff</td><td style='padding-left: 5px;'>Name</td><td></td></tr>";
 
 			let myTimeToPromo = timeToOneMap.get(myID).time;
 			let myPromotionTime = new Date();
@@ -877,7 +882,7 @@
 						simResultsText += "background-color:"+sMulti_hBias;
 					}
 					simResultsText += "; font-size: 10px;'>";
-					simResultsText += "<td>#"+String(obj.order)+"</td>";
+					simResultsText += "<td>"+String(obj.order)+"</td>";
 					simResultsText += "<td>"+secondsToHms(obj.time,true)+"</td>";
 					simResultsText += "<td>";
 					if (ranker.you) {
@@ -904,7 +909,7 @@
 					else {
 						simResultsText += "<td></td><td></td><td></td>";
 					}
-					simResultsText += "<td style='overflow-x: hidden; padding-left: 5px;'>"+sanitize(ranker.username)+"</td>";
+					simResultsText += "<td style='overflow: hidden; padding-left: 5px;'>"+sanitize(ranker.username)+"</td>";
 					simResultsText += "<td>"+"<a style='text-decoration: none;' href='#' onclick='setSimulationPlayer("+ranker.accountId+")'>\u{1F441}</a></td>";
 					simResultsText += "</tr>";
 
@@ -935,6 +940,7 @@
 				toptime2 = secondsToHms(timeOnTop,false);
 			}
 
+/*
 			if (window.store.state.ladder.rankers[0].accountId === topRanker.accountId && window.store.state.ladder.rankers[0].growing && window.store.state.ladder.rankers[0].points - basePointsToPromote >= 0 && window.store.state.ladder.rankers.length >= Math.max(10,window.store.state.ladder.number)) {
 				// Top Ranker has not changed, and would be able to promote
 				topRankerVinegar = topRankerVinegar * 0.9975; // decay by 0.25%
@@ -948,7 +954,7 @@
 				topRankerSeconds = 0;
 				decay = "n/a";
 			}
-
+*/
 			if (current) {
 				simResultsText += "<table cellpadding='3' style='margin-top:6px;'><tr style='font-weight: bold; font-size: 12px;'><td></td><td>Action</td><td style='padding-right: 60px;'>No changes</td><td style='font-weight:bold;' colspan='2'>Cost for bias</td></tr><tr style='font-size: 12px;'><td style='font-weight: bold;'>Promotion (local time)</td><td>"+promotime1+"</td><td>"+promotime2+"</td><td>"+String(highestsensiblebias - 3).padStart(3, "+0")+"</td><td class='text-end'>"+Math.pow(window.store.state.ladder.number + 1, highestsensiblebias - 3).toLocaleString()+"</td></tr><tr style='font-size: 12px;'><td style='font-weight: bold;'>Time "+ (noActionTakenTimeTime > actionTakenTime ? "gain" : "loss") +"</td><td>"+gaintime1+"</td><td>"+gaintime2+"</td><td>"+String(highestsensiblebias - 2).padStart(3, "+0")+"</td><td class='text-end'>"+Math.pow(window.store.state.ladder.number + 1, highestsensiblebias - 2).toLocaleString()+"</td></tr><tr style='font-size: 12px;'><td style='font-weight: bold;'>Floor time</td><td>"+floortime1+"</td><td>"+floortime2+"</td><td>"+String(highestsensiblebias - 1).padStart(3, "+0")+"</td><td class='text-end'>"+Math.pow(window.store.state.ladder.number + 1, highestsensiblebias - 1).toLocaleString()+"</td></tr><tr style='font-size: 12px;'><td style='font-weight: bold;'>Top time</td><td>"+toptime1+"</td><td>"+toptime2+"</td><td>"+String(highestsensiblebias).padStart(3, "+0")+"</td><td class='text-end'>"+Math.pow(window.store.state.ladder.number + 1, highestsensiblebias).toLocaleString()+"</td></tr></table>";
 			}
