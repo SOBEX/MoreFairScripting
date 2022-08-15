@@ -11,6 +11,8 @@
 
 //support subscribing to multiple actions
 
+//fix ticker misdetecting lag (without removing after)
+
 window.sobSetup=function(){
    Fair.register(api=>window.sobStore=api);
    window.sobStore_actions={'setupConnection':[],'setupGame':[],'setupChat':[],'incrementHighestLadder':[],'ladder/setup':[],'ladder/handleLadderEvent':[],'ladder/handleGlobalEvent':[],'ladder/handlePrivateEvent':[],'ladder/calculate':[],'ladder/handleEvent':[],'ladder/stats/calculate':[],'mod/searchName':[]};
@@ -65,15 +67,7 @@ window.sobSetup=function(){
       };
    };
    window.sobResetupInterval=setInterval(window.sobResetup,1000);
-   window.sobTickDetectLastValue=0;
-   window.sobTickDetect=function(){
-      let currentValue=window.sobStore.state.ladder.rankers.filter(r=>r.growing)[0]?.points.toNumber();
-      if(currentValue&&window.sobTickDetectLastValue!=currentValue){
-         window.sobTickDetectLastValue=currentValue;
-         for(a in window.sobStore_actions){window.sobStore_actions[a].forEach(m=>m({'message':{'delta':1}}))};
-      };
-   };
-   window.sobTickDetectInterval=setInterval(window.sobTickDetect,100);
+   Fair.register(api=>api.subscribeToHook('onTick',m=>{for(let a in window.sobStore_actions){window.sobStore_actions[a].forEach(e=>e({message:m}))}}));
 };
 
 window.sobTicker={
@@ -99,7 +93,7 @@ window.sobTicker={
       "use strict";
       return{
          tickerFixedLength:4,
-         tickerDelay:500,
+         tickerDelay:200,
       };
    },
    setup:function(){
@@ -110,7 +104,7 @@ window.sobTicker={
    },
    before:function(e){
       "use strict";
-      window.sobData.tickerDelta+=e.message.delta;
+      window.sobData.tickerDelta+=Number(e.message.delta);
       window.sobData.tickerSpanText.innerHTML='tick';
       window.sobData.tickerSpanCount.innerHTML=window.sobData.tickerCount.toFixed(window.sobSettings.tickerFixedLength);
       window.sobData.tickerSpanDelta.innerHTML=window.sobData.tickerDelta.toFixed(window.sobSettings.tickerFixedLength);
@@ -133,7 +127,7 @@ window.sobSimExport={
    flexitem:function(){
       "use strict";
       let div=document.createElement('div');
-      div.innerHTML='<button onclick="window.sobData.simExportCopy();">Copy to clipboard</button> <button ondblclick="window.sobData.simExportDownload();">Download log</button> <input type="checkbox" id="simExportLogActive"> simExportLogActive';
+      div.innerHTML='<button onclick="window.sobData.simExportCopy();">Copy to clipboard</button> <button ondblclick="window.sobData.simExportDownload();">Download log</button> <input type="checkbox" id="simExportLogActive"> <label for="simExportLogActive">simExportLogActive</label>';
       return div;
    },
    data:function(){
@@ -162,11 +156,11 @@ window.sobSimExport={
       "use strict";
       const space=' ';
       const endline='\r\n';
-      let string=window.sobStore.state.ladder.yourRanker.accountId+space/*+store.state.ladder.basePointsToPromote.m+'e'+store.state.ladder.basePointsToPromote.e+space*/+(window.sobStore.state.ladder.number/*+1*/)+space+window.sobStore.state.ladder.rankers.length+endline;
+      let string=window.sobStore.state.ladder.yourRanker.accountId+space+window.sobStore.state.ladder.number+space+window.sobStore.state.ladder.basePointsToPromote.toFixed()+space+window.sobStore.state.ladder.rankers.length+endline;
       window.sobStore.state.ladder.rankers.forEach(function(r){
          string+=(r.growing?'1':'0')+space+r.rank+space+r.accountId+space+r.bias+space+r.multi+space+Math.round(r.power)+space+Math.round(r.points)+space;
-         if(r.timesAsshole>0){
-            string+='('+r.timesAsshole+')'+window.sobStore.state.settings.assholeTags[r.timesAsshole]+space;
+         if(r.ahPoints>0){
+            string+='('+r.ahPoints+')'+r.tag+space;
          };
          string+=r.username.replace(/[\t\n\v\f\r]/g,'')+endline;
       });
@@ -179,12 +173,38 @@ window.sobSimExport={
    },
 };
 
+window.sobTopNotifier={
+   id:'sobTopNotifier',
+   flexitem:function(){
+      "use strict";
+      let div=document.createElement('div');
+      div.innerHTML='<input type="checkbox" id="topNotifierActive"> <label for="topNotifierActive">topNotifierActive</label>';
+      return div;
+   },
+   data:function(){
+      "use strict";
+      return{
+         topNotifierCheckboxActive:document.getElementById('topNotifierActive'),
+         notification:null,
+      };
+   },
+   after:function(e){
+      "use strict";
+      if(window.sobData.notification){
+         window.sobData.notification.close();
+      };
+      if(window.sobData.topNotifierCheckboxActive.checked&&window.sobStore.state.ladder.yourRanker.rank===1){
+         window.sobData.notification=new Notification('Promote!',{body:'You\'re first.'});
+      };
+   },
+};
+
 window.sobGraper={
    id:'sobGraper',
    flexitem:function(){
       "use strict";
       let div=document.createElement('div');
-      div.innerHTML='<input type="checkbox" id="graperActive"> graperActive';
+      div.innerHTML='<input type="checkbox" id="graperActive"> <label for="graperActive">graperActive</label>';
       return div;
    },
    data:function(){
@@ -199,47 +219,6 @@ window.sobGraper={
       if(window.sobData.graperCheckboxActive.checked&&window.sobStore.state.ladder.yourRanker.growing&&window.sobStore.state.ladder.yourRanker.rank<window.sobStore.state.ladder.rankers.length){
          window.sobData.graperAlert.play();
       };
-   },
-};
-
-window.sobEventerLadder={
-   id:'sobEventerLadder',
-   action:'ladder/handleLadderEvent',
-   before:function(e){
-      "use strict";
-      console.log('ladder/handleLadderEvent:',e);
-   },
-};
-window.sobEventerGlobal={
-   id:'sobEventerGlobal',
-   action:'ladder/handleGlobalEvent',
-   before:function(e){
-      "use strict";
-      console.log('ladder/handleGlobalEvent:',e);
-   },
-};
-window.sobEventerPrivate={
-   id:'sobEventerPrivate',
-   action:'ladder/handlePrivateEvent',
-   before:function(e){
-      "use strict";
-      console.log('ladder/handlePrivateEvent:',e);
-   },
-};
-window.sobEventerCalculate={
-   id:'sobEventerCalculate',
-   action:'ladder/calculate',
-   before:function(e){
-      "use strict";
-      console.log('ladder/calculate:',e);
-   },
-};
-window.sobEventer={
-   id:'sobEventer',
-   action:'ladder/handleEvent',
-   before:function(e){
-      "use strict";
-      console.log('ladder/handleEvent:',e);
    },
 };
 
@@ -295,10 +274,6 @@ window.sobRegisterSobFollower=function(){
 window.sobSetup();
 window.sobRegister(window.sobTicker);
 window.sobRegister(window.sobSimExport);
+window.sobRegister(window.sobTopNotifier);
 window.sobRegister(window.sobGraper);
-//window.sobRegister(window.sobEventerLadder);
-//window.sobRegister(window.sobEventerGlobal);
-//window.sobRegister(window.sobEventerPrivate);
-//window.sobRegister(window.sobEventerCalculate);
-//window.sobRegister(window.sobEventer);
 window.sobRegisterSobFollower();
