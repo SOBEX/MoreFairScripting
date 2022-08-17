@@ -28,29 +28,61 @@
       }
    </style>
    <script type="text/javascript">
+      function find(ladderStats, accountId) {
+         for (let ranker of ladderStats.rankers) {
+            if (ranker.accountId === accountId)
+               return ranker;
+         }
+         return null;
+      }
+
       function preprocess(roundStats) {
          'use strict';
-         for (let key in roundStats.ladders)
-            roundStats.ladders[key].rankers.sort((l, r) => l.rank > r.rank);
+         let AHLadder = Object.keys(roundStats.ladders).length - 1;
+         if (true) {
+            window.roundStats = roundStats;
+            window.AHLadder = AHLadder;
+         }
+         for (let ladderKey in roundStats.ladders)
+            roundStats.ladders[ladderKey].rankers.sort((l, r) => l.rank > r.rank);
          roundStats.rankers = roundStats.ladders[1].rankers.map(ranker => {
             return {
                accountId: ranker.accountId,
                ahPoints: ranker.ahPoints,
                tag: ranker.tag,
-               username: ranker.username
+               username: ranker.username,
+               maxLadder: Object.values(roundStats.ladders).reduce((count, ladder) => count + (find(ladder, ranker.accountId) ? 1 : 0), 0),
+               reachedAH: !!find(roundStats.ladders[AHLadder], ranker.accountId),
+               becameAH: !!find(roundStats.ladders[AHLadder + 1], ranker.accountId),
+               autoCount: Object.values(roundStats.ladders).slice(0, -1).reduce((count, ladder) => count + (find(ladder, ranker.accountId)?.autoPromote ? 1 : 0), 0),
+               badges: []
             }
          }).sort((l, r) => l.ahPoints !== r.ahPoints ? l.ahPoints < r.ahPoints : l.accountId > r.accountId);
-         //TODO preprocess badges
+         //Captcha - Manual promote on every ladder
+         //Cheapskate - Auto promote less than 25% of ladders
+         //Mr. Robot - Auto promote 90% or more of ladders
+         for (let ranker of roundStats.rankers) {
+            if (ranker.reachedAH) {
+               if (ranker.autoCount === 0)
+                  ranker.badges.push('Captcha');
+               if (ranker.autoCount < 0.25 * AHLadder)
+                  ranker.badges.push('Cheapskate');
+               if (ranker.autoCount >= 0.9 * AHLadder)
+                  ranker.badges.push('Mr. Robot')
+            }
+         }
+         //TODO preprocess remaining badges
          return roundStats;
       }
 
       async function download(season, round) {
          'use strict';
-         let file = await fetch(`./roundStats_S${String(season).padStart(2,'0')}R${String(round).padStart(3,'0')}.json`);
-         if(!file.ok)
+         let file = await fetch(
+            `./roundStats_S${String(season).padStart(2,'0')}R${String(round).padStart(3,'0')}.json`);
+         if (!file.ok)
             throw 'Season or Round not found.';
          let text = await file.text();
-         let roundStats=JSON.parse(text);
+         let roundStats = JSON.parse(text);
          return preprocess(roundStats);
       }
 
@@ -170,14 +202,20 @@
       <div style="flex:2;">
          <table class="full-width" id="badgestable">
             <tr>
-               <th>ID</th>
-               <th>Name</th>
-               <th>Badges</th>
+               <th>Badge</th>
+               <th>Description</th>
             </tr>
             <tr>
-               <td>ID</td>
-               <td>Name</td>
-               <td>Badges</td>
+               <td>Captcha</td>
+               <td>Manual promote on every ladder</td>
+            </tr>
+            <tr>
+               <td>Cheapskate</td>
+               <td>Auto promote less than 25% of ladders</td>
+            </tr>
+            <tr>
+               <td>Mr. Robot</td>
+               <td>Auto promote 90% or more of ladders</td>
             </tr>
          </table>
          <div class="bar-horizontal"></div>
