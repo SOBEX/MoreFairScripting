@@ -18,17 +18,18 @@
          flex-direction: row;
       }
 
-      .bar-vertical {
+      .bar {
          border: 1px solid gray;
       }
 
-      .bar-horizontal {
-         width: 100%;
-         border: 1px solid gray;
+      th,
+      td {
+         text-align: start;
       }
    </style>
    <script type="text/javascript">
       function find(ladderStats, accountId) {
+         'use strict';
          for (let ranker of ladderStats.rankers) {
             if (ranker.accountId === accountId)
                return ranker;
@@ -51,10 +52,10 @@
                ahPoints: ranker.ahPoints,
                tag: ranker.tag,
                username: ranker.username,
-               maxLadder: Object.values(roundStats.ladders).reduce((count, ladder) => count + (find(ladder, ranker.accountId) ? 1 : 0), 0),
                reachedAH: !!find(roundStats.ladders[AHLadder], ranker.accountId),
                becameAH: !!find(roundStats.ladders[AHLadder + 1], ranker.accountId),
-               autoCount: Object.values(roundStats.ladders).slice(0, -1).reduce((count, ladder) => count + (find(ladder, ranker.accountId)?.autoPromote ? 1 : 0), 0),
+               maxLadder: Object.values(roundStats.ladders).reduce((count, ladder) => count + (find(ladder, ranker
+                  .accountId) ? 1 : 0), 0),
                badges: []
             }
          }).sort((l, r) => l.ahPoints !== r.ahPoints ? l.ahPoints < r.ahPoints : l.accountId > r.accountId);
@@ -62,13 +63,42 @@
          //Cheapskate - Auto promote less than 25% of ladders
          //Mr. Robot - Auto promote 90% or more of ladders
          for (let ranker of roundStats.rankers) {
-            if (ranker.reachedAH) {
-               if (ranker.autoCount === 0)
+            let totalCount = 0
+            let autoCount = 0;
+            for (let ladderKey in roundStats.ladders) {
+               if (ladderKey > AHLadder)
+                  continue;
+               let found = find(roundStats.ladders[ladderKey], ranker.accountId);
+               if (found) {
+                  if (roundStats.roundTypes.includes('AUTO')) {
+                     //if (found.autoPromote)
+                     //autoCount++
+                  } else if (roundStats.ladders[ladderKey].ladderTypes.includes('NO_AUTO')) {
+                     //if (found.autoPromote)
+                     //autoCount++
+                  } else if (!roundStats.ladders[ladderKey].ladderTypes.includes('FREE_AUTO')) {
+                     totalCount++;
+                     if (found.autoPromote)
+                        autoCount++;
+                  } else {
+                     //default freeauto => dont care
+                     //default catchup => hard, has always good, not bought early bad, not bought late dont care
+                     //TODO
+                     totalCount++;
+                     if (found.autoPromote)
+                        autoCount++;
+                  }
+               }
+            }
+            let percent = totalCount === 0 ? autoCount === 0 ? 0 : 100 : 100 * autoCount / totalCount;
+            ranker.autoCount = `${autoCount}/${totalCount}=${percent.toFixed(2)}%`;
+            if (ranker.reachedAH && totalCount > 0) {
+               if (autoCount === 0)
                   ranker.badges.push('Captcha');
-               if (ranker.autoCount < 0.25 * AHLadder)
+               if (percent < 25)
                   ranker.badges.push('Cheapskate');
-               if (ranker.autoCount >= 0.9 * AHLadder)
-                  ranker.badges.push('Mr. Robot')
+               if (percent >= 90)
+                  ranker.badges.push('Mr. Robot');
             }
          }
          //TODO preprocess remaining badges
@@ -89,6 +119,7 @@
       let store = {};
 
       async function ensure(season, round) {
+         'use strict';
          if (!(season in store))
             store[season] = {};
          if (!(round in store[season]))
@@ -106,64 +137,78 @@
          return [roundStats, ladderStats];
       }
 
+      function displayValue(value, spanId) {
+         'use strict';
+         let span = document.getElementById(spanId);
+         span.textContent = value;
+      }
+
+      function displayTable(array, tableId) {
+         'use strict';
+         let table = document.getElementById(tableId);
+         table.innerHTML = '';
+         let header = table.insertRow(-1);
+         for (let key in array[0])
+            header.insertCell(-1).innerHTML = key;
+         table.innerHTML = table.innerHTML.replace(/td>/g, 'th>');
+         for (let value of array) {
+            let row = table.insertRow(-1);
+            for (let key in value)
+               row.insertCell(-1).innerHTML = value[key];
+         }
+      }
       async function display(season, round, ladder) {
          'use strict';
          try {
             let [roundStats, ladderStats] = await get(season, round, ladder);
             console.log(season, round, ladder, roundStats, ladderStats);
-            let laddertable = document.getElementById('laddertable'); {
-               laddertable.innerHTML = '';
-               let header = laddertable.insertRow(-1);
-               for (let key in ladderStats.rankers[0])
-                  header.insertCell(-1).innerHTML = key;
-               laddertable.innerHTML = laddertable.innerHTML.replace(/td>/g, 'th>');
-            }
-            for (let ranker of ladderStats.rankers) {
-               let row = laddertable.insertRow(-1);
-               for (let key in ranker)
-                  row.insertCell(-1).innerHTML = ranker[key];
-            }
-            let rankerstable = document.getElementById('rankerstable'); {
-               rankerstable.innerHTML = '';
-               let header = rankerstable.insertRow(-1);
-               for (let key in roundStats.rankers[0])
-                  header.insertCell(-1).innerHTML = key;
-               rankerstable.innerHTML = rankerstable.innerHTML.replace(/td>/g, 'th>');
-            }
-            for (let ranker of roundStats.rankers) {
-               let row = rankerstable.insertRow(-1);
-               for (let key in ranker)
-                  row.insertCell(-1).innerHTML = ranker[key];
-            }
+            displayValue(season, 'seasonSpan');
+            displayValue(round, 'roundSpan');
+            displayValue(roundStats.roundTypes, 'roundTypesSpan');
+            displayValue(ladder, 'ladderSpan');
+            displayValue(ladderStats.ladderTypes, 'ladderTypesSpan');
+            displayTable(ladderStats.rankers, 'ladderTable');
+            displayTable(roundStats.rankers, 'rankersTable');
          } catch (err) {
+            console.log(err);
             alert(err);
          }
       }
 
       function load() {
          'use strict';
-         let season = document.getElementById('season').value;
-         let round = document.getElementById('round').value;
-         let ladder = document.getElementById('ladder').value;
+         let season = document.getElementById('seasonInput').value;
+         let round = document.getElementById('roundInput').value;
+         let ladder = document.getElementById('ladderInput').value;
          display(season, round, ladder);
       }
    </script>
 </head>
 
 <body class="flex-column" style="margin:0;">
-   <div style="margin:8px">
-      <label for="season">Season</label>
-      <input type="number" id="season" name="season" min="2" max="99" value="2">
-      <label for="round">Round</label>
-      <input type="number" id="round" name="round" min="1" max="999" value="1">
-      <label for="ladder">Ladder</label>
-      <input type="number" id="ladder" name="ladder" min="1" max="999" value="1">
-      <button onclick="load()">Load</button>
+   <div class="flex-row">
+      <div style="flex:3;padding:9px;">
+         <label for="seasonInput">Season</label>
+         <input type="number" id="seasonInput" name="seasonInput" min="2" max="99" value="2">
+         <label for="roundInput">Round</label>
+         <input type="number" id="roundInput" name="roundInput" min="1" max="999" value="1">
+         <label for="ladderInput">Ladder</label>
+         <input type="number" id="ladderInput" name="ladderInput" min="1" max="999" value="1">
+         <button onclick="load()">Load</button>
+      </div>
+      <div class="bar"></div>
+      <div class="flex-row" style="flex:2;padding:9px 6px;">
+         <span style="flex:1;">Season <span id="seasonSpan">2</span></span>
+         <span style="flex:1;">Round <span id="roundSpan">1</span></span>
+         <span style="flex:1;">RoundTypes <span id="roundTypesSpan">DEFAULT</span></span>
+         <span style="flex:1;">Ladder <span id="ladderSpan">1</span></span>
+         <span style="flex:1;">LadderTypes <span id="ladderTypesSpan">DEFAULT</span></span>
+      </div>
    </div>
-   <div class="bar-horizontal"></div>
+   <div class="bar"></div>
    <div class="flex-row">
       <div style="flex:3;">
-         <table class="full-width" id="laddertable">
+         <table class="full-width" id="ladderTable">
             <tr>
                <th>accountId</th>
                <th>bias</th>
@@ -198,9 +243,9 @@
             </tr>
          </table>
       </div>
-      <div class="bar-vertical"></div>
+      <div class="bar"></div>
       <div style="flex:2;">
-         <table class="full-width" id="badgestable">
+         <table class="full-width" id="badgesTable">
             <tr>
                <th>Badge</th>
                <th>Description</th>
@@ -218,23 +263,32 @@
                <td>Auto promote 90% or more of ladders</td>
             </tr>
          </table>
-         <div class="bar-horizontal"></div>
-         <table class="full-width" id="rankerstable">
+         <div class="bar"></div>
+         <table class="full-width" id="rankersTable">
             <tr>
                <th>accountId</th>
                <th>ahPoints</th>
                <th>tag</th>
                <th>username</th>
+               <th>reachedAH</th>
+               <th>becameAH</th>
+               <th>maxLadder</th>
+               <th>badges</th>
+               <th>autoCount</th>
             </tr>
             <tr>
                <td>accountId</td>
                <td>ahPoints</td>
                <td>tag</td>
                <td>username</td>
+               <td>reachedAH</td>
+               <td>becameAH</td>
+               <td>maxLadder</td>
+               <td>badges</td>
+               <td>autoCount</td>
             </tr>
          </table>
       </div>
-   </div>
    </div>
 </body>
 
