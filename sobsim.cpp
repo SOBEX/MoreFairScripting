@@ -456,22 +456,43 @@ int main(){
 		original.read();
 		auto start=std::chrono::high_resolution_clock::now();
 
-		printBiasTimes(original);
-		printETA(original);
 		enum class Choice{
-			Multiplier,Promote,Both
+			Simple,Multiplier,Promote,Both
 		}choice=Choice::Promote;
-		if(choice==Choice::Multiplier||choice==Choice::Both){
+		switch(choice){
+		case Choice::Simple:
+			printETA(original);
+			skipToNextBias(original);
+			printETA(original);
+			break;
+		case Choice::Multiplier:
+			printBiasTimes(original);
+			printETA(original);
 			std::cout<<"Single Bias to Multi in ";printTime(solveSingleBiasTimeUntil(original,condition::selfNextMultiplier()).value_or(oneDay*365))<<'\n';
 			std::cout<<"Complex Bias to Multi in ";printTime(solveBiasTimeUntil(original,condition::selfNextMultiplier()).value_or(oneDay*365))<<'\n';
-		}
-		if(choice==Choice::Promote||choice==Choice::Both){
+			skipToNextBias(original);
+			printETA(original);
+			break;
+		case Choice::Promote:
+			printBiasTimes(original);
+			printETA(original);
 			std::cout<<"Single Bias to Promote in ";printTime(solveSingleBiasTimeUntil(original,condition::selfPromote()).value_or(oneDay*365))<<'\n';
 			std::cout<<"Complex Bias to Promote in ";printTime(solveBiasTimeUntil(original,condition::selfPromote()).value_or(oneDay*365))<<'\n';
+			skipToNextBias(original);
+			printETA(original);
+			break;
+		case Choice::Both:
+			printBiasTimes(original);
+			printETA(original);
+			std::cout<<"Single Bias to Multi in ";printTime(solveSingleBiasTimeUntil(original,condition::selfNextMultiplier()).value_or(oneDay*365))<<'\n';
+			std::cout<<"Complex Bias to Multi in ";printTime(solveBiasTimeUntil(original,condition::selfNextMultiplier()).value_or(oneDay*365))<<'\n';
+			std::cout<<"Single Bias to Promote in ";printTime(solveSingleBiasTimeUntil(original,condition::selfPromote()).value_or(oneDay*365))<<'\n';
+			std::cout<<"Complex Bias to Promote in ";printTime(solveBiasTimeUntil(original,condition::selfPromote()).value_or(oneDay*365))<<'\n';
+			skipToNextBias(original);
+			printETA(original);
+			break;
 		}
 		//std::cout<<"Next Multi in ";printTime(original.simulateUntil(condition::selfNextMultiplier()))<<'\n';
-		skipToNextBias(original);
-		printETA(original);
 
 		auto end=std::chrono::high_resolution_clock::now();
 		auto duration=end-start;
