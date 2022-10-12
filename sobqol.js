@@ -93,7 +93,6 @@ window.sobTicker={
       "use strict";
       return{
          tickerFixedLength:4,
-         tickerDelay:200,
       };
    },
    setup:function(){
@@ -104,21 +103,19 @@ window.sobTicker={
    },
    before:function(e){
       "use strict";
-      window.sobData.tickerDelta+=Number(e.message.delta);
-      window.sobData.tickerSpanText.innerHTML='tick';
+      if(window.sobData.tickerDelta>=1.5)console.log('lag:',window.sobData.tickerDelta);
+      window.sobData.tickerCount+=window.sobData.tickerDelta;
+      window.sobData.tickerDelta=0;
+      window.sobData.tickerSpanText.innerHTML='tock';
       window.sobData.tickerSpanCount.innerHTML=window.sobData.tickerCount.toFixed(window.sobSettings.tickerFixedLength);
       window.sobData.tickerSpanDelta.innerHTML=window.sobData.tickerDelta.toFixed(window.sobSettings.tickerFixedLength);
    },
    after:function(e){
       "use strict";
-      setTimeout(function(){
-         window.sobData.tickerCount+=window.sobData.tickerDelta;
-         if(window.sobData.tickerDelta>=1.5)console.log('lag:',window.sobData.tickerDelta);
-         window.sobData.tickerDelta=0;
-         window.sobData.tickerSpanText.innerHTML='tock';
-         window.sobData.tickerSpanCount.innerHTML=window.sobData.tickerCount.toFixed(window.sobSettings.tickerFixedLength);
-         window.sobData.tickerSpanDelta.innerHTML=window.sobData.tickerDelta.toFixed(window.sobSettings.tickerFixedLength);
-      },window.sobSettings.tickerDelay);
+      window.sobData.tickerDelta+=Number(e.message.delta);
+      window.sobData.tickerSpanText.innerHTML='tick';
+      window.sobData.tickerSpanCount.innerHTML=window.sobData.tickerCount.toFixed(window.sobSettings.tickerFixedLength);
+      window.sobData.tickerSpanDelta.innerHTML=window.sobData.tickerDelta.toFixed(window.sobSettings.tickerFixedLength);
    },
 };
 
@@ -134,11 +131,23 @@ window.sobSimExport={
       "use strict";
       return{
          simExportCheckboxLogActive:document.getElementById('simExportLogActive'),
-         simExportActive:true,
          simExportLog:[],
+         simExportMake:function(){
+            const space=' ';
+            const endline='\r\n';
+            let sobSimExport=window.sobStore.state.ladder.yourRanker.accountId+space+window.sobStore.state.ladder.number+space+window.sobStore.state.ladder.basePointsToPromote.toFixed()+space+window.sobStore.state.ladder.rankers.length+endline;
+            window.sobStore.state.ladder.rankers.forEach(function(r){
+               sobSimExport+=(r.growing?'1':'0')+space+r.rank+space+r.accountId+space+r.bias+space+r.multi+space+Math.round(r.power)+space+Math.round(r.points)+space;
+               if(r.ahPoints>0){
+                  sobSimExport+='('+r.ahPoints+')'+r.tag+space;
+               };
+               sobSimExport+=r.username.replace(/[\t\n\v\f\r]/g,'')+endline;
+            });
+            return sobSimExport;
+         },
          simExportCopy:function(){
             "use strict";
-            navigator.clipboard.writeText(window.sobData.simExportLog[window.sobData.simExportLog.length-1].content);
+            navigator.clipboard.writeText(window.sobData.simExportCheckboxLogActive.checked?window.sobData.simExportLog[window.sobData.simExportLog.length-1].content:window.sobData.simExportMake());
          },
          simExportDownload:function(){
             "use strict";
@@ -154,22 +163,9 @@ window.sobSimExport={
    },
    after:function(e){
       "use strict";
-      const space=' ';
-      const endline='\r\n';
-      let string=window.sobStore.state.ladder.yourRanker.accountId+space+window.sobStore.state.ladder.number+space+window.sobStore.state.ladder.basePointsToPromote.toFixed()+space+window.sobStore.state.ladder.rankers.length+endline;
-      window.sobStore.state.ladder.rankers.forEach(function(r){
-         string+=(r.growing?'1':'0')+space+r.rank+space+r.accountId+space+r.bias+space+r.multi+space+Math.round(r.power)+space+Math.round(r.points)+space;
-         if(r.ahPoints>0){
-            string+='('+r.ahPoints+')'+r.tag+space;
-         };
-         string+=r.username.replace(/[\t\n\v\f\r]/g,'')+endline;
-      });
-      if(window.sobData.simExportActive){
-         window.sobData.simExportLog.push({'time':Date(),'content':string});
-      }else{
-         window.sobData.simExportLog[window.sobData.simExportLog.length-1]={'time':Date(),'content':string};
-      };
-      window.sobData.simExportActive=window.sobData.simExportCheckboxLogActive.checked;
+      if(window.sobData.simExportCheckboxLogActive.checked){
+         window.sobData.simExportLog.push({'time':Date(),'content':window.sobData.simExportMake()});
+      }
    },
 };
 
@@ -276,4 +272,4 @@ window.sobRegister(window.sobTicker);
 window.sobRegister(window.sobSimExport);
 window.sobRegister(window.sobTopNotifier);
 window.sobRegister(window.sobGraper);
-window.sobRegisterSobFollower();
+//window.sobRegisterSobFollower();
