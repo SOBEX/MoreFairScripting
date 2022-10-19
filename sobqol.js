@@ -268,8 +268,8 @@ window.sobRegisterSobFollower=function(){
 };
 
 window.sobSetup();
-window.sobRegister(window.sobTicker);
-window.sobRegister(window.sobSimExport);
+//window.sobRegister(window.sobTicker);
+//window.sobRegister(window.sobSimExport);
 window.sobRegister(window.sobTopNotifier);
 window.sobRegister(window.sobGraper);
 //window.sobRegisterSobFollower();
