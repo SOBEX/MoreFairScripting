@@ -10,57 +10,26 @@
 #include<vector>
 void injectArguments(){
 	static std::stringstream arguments;
-	arguments<<R"RAW(41894	20	50
-1	1	37687	4	4	542322	2994708531	mateo
-1	2	41338	6	4	956386	2862840095	(2)♣ Aaaaaaaaaaaaaaaaaaaaaaaa
-1	3	41068	6	4	960991	2831417750	(1)♠ Boozle
-1	4	42832	6	4	958852	2810254837	[blue] tecnetan (sleeping)
-1	5	290	6	4	669209	2657406831	Known Guest 13
-1	6	43484	6	4	972026	2555873876	(2)♣ Celer
-1	7	41636	6	4	1029244	2550423004	(2)♣ 🐘 Heph 💦
-1	8	526	6	4	900132	2433155799	(2)♣ doshMobile
-1	9	43698	7	4	1019443	2316076191	EricTheUnready
-1	10	1802	6	4	1020590	2264937506	(2)♣ Sophie
-1	11	41251	0	4	337471	2262023085	tmike 👁💋👁
-1	12	43443	6	4	1006185	2226769965	Katie (afk) A20
-1	13	41356	0	3	384915	2072826181	(1)♠ oilplank
-1	14	41838	1	4	653679	2032466554	Doc519 A18
-1	15	42379	6	4	982540	1909803384	Logiar (⚙️20)
-1	16	43006	7	4	869113	1758774502	BoCK A20
-1	17	1512	5	4	1016166	1697615267	(5)♤ tree
-1	18	40847	6	4	1007475	1671324938	(1)♠ Gilfoyle 🖥️
-1	19	68	4	4	648990	1477729926	(3)♥ Gawr Gura
-1	20	41942	2	2	233502	1476962760	Pingwin
-1	21	41484	0	1	207304	1376066645	Mys T. Guest
-1	22	37644	0	2	242716	1357853195	(3)♥ Space 🇺🇦 Dandy
-1	23	1620	0	1	200617	1341413062	Korben
-1	24	1061	7	4	1078963	1324447856	(3)♥ � �🍇 SendMoreGrapes - A20
-1	25	40360	0	1	203928	1294456629	Ladders
-1	26	43732	0	1	204645	1293640537	Nope [A19 zZz]
-1	27	38709	0	1	205785	1287947234	lila uwu
-1	28	481	0	1	208400	1286775426	(5)♤ Elara Zombiekiller
-1	29	41176	0	1	207472	1286584075	Oligor
-1	30	38589	0	1	207490	1286572626	(1)♠ RoyB | 🇺🇦
-1	31	43791	0	1	205785	1284975051	Willd | A19
-1	32	37772	0	1	206229	1278536154	(1)♠ Orns
-1	33	1053	6	4	875925	1008832790	(9)♟ Turtle
-1	34	40882	6	4	798993	995643599	(1)♠ To the 🌑
-1	35	40547	7	4	1094323	826918502	(1)♠ dero
-1	36	39115	0	3	385051	626705502	(6)♧ Zilvarro
-1	37	42680	0	3	378534	588001257	(1)♠ poopy
-1	38	1341	0	3	347389	478324843	(3)♥ The ❓ Guest - asleep A19
-1	39	20798	0	1	190881	455453222	mino (sad)
-1	40	1757	2	3	344828	393441188	(2)♣ MonkeyMarkMario (🙉✔️👲)
-1	41	2213	5	4	748264	343547444	(1)♠ eta / Pancakes 🥞
-1	42	37916	3	4	395056	329719933	(2)♣ Gianteater Ant 🐜
-1	43	37726	6	4	470604	296767417	(2)♣ Coyote151sleepauto16
-1	44	42284	1	4	423894	181241768	ℕ⍥&dagger; ℂℍᾶḋ
-1	45	2800	2	3	177593	107521947	Softly Falling Rain - A20
-1	46	38743	4	4	855604	89608091	(1)♠ balazamon0
-1	47	1328	0	4	171037	76512556	(3)♥  Lurker DUCKS
-1	48	37169	7	4	398413	62835347	(1)♠ Artist formerly known as 12
-1	49	2632	3	2	20961	2127379	(2)♣ Missingno
-1	50	41894	2	4	9441	187275	(2)♣ SOBEX|AFK-ping before grape
+	arguments<<R"RAW(41894 19 5439311212 19
+1 1 57630 4 3 105334 224769705 (30)♣ Moose Guest 🌈🌑
+1 2 1802 4 3 51933 193555273 (486)♟ SophieZzz 🌈🌚
+1 3 52114 5 3 150797 131334720 (184)♤ Muldeh🌈🌑
+1 4 41942 5 3 130310 124045136 (91)♥ Pingwin
+1 5 58175 4 3 138683 111207298 Laaria 🌈
+1 6 37916 2 3 109940 101355791 (228)♧ Gianteater Ant 🐜🌈🌑
+1 7 4 3 3 88434 90304496 (48)♣ Kali 🌈🌘 (probably busy coding)
+1 8 38611 2 2 57044 67366379 (3) Far
+1 9 54958 5 3 151838 49922480 (335)♡ General Consensus 🌈🌘
+1 10 43978 2 3 97314 41714807 (297)♡ 📱MobileChecker 🌈🌑
+1 11 54963 5 3 146478 40732363 (366)♢ Lola 🌈🌑
+1 12 57020 5 3 115599 20438476 (88)♥ Malice🌈🌘
+1 13 56289 0 4 20181 3506539 (3) KingsGambit
+1 14 58129 0 4 12793 1323946 Mystery Guest
+1 15 39781 0 4 12710 1323872 (305)♡ Gottlieb🌈🌚
+1 16 58108 0 4 8291 514743 death
+1 17 49941 4 2 7342 381691 (273)♧ Sylvia
+1 18 53741 0 2 768 8665 (235)♧ Psychemaster 🌈🌚
+1 19 41894 0 4 72 72 (314)♡ SOBEX 🌈🌚
 )RAW";
 	std::cin.rdbuf(arguments.rdbuf());
 }
@@ -326,14 +295,14 @@ namespace condition{
 		return std::bind(_idBias,_1,-1);
 	}
 }
-std::optional<Time> solveSingleBiasTimeUntil(Data data,condition::ft condition=condition::selfPromote(),const int id=-1){
+std::optional<Time> solveSingleBiasTimeUntil(Data data,condition::ft condition=condition::selfPromote(),const int id=-1,const int minBias=0){
 	Time bestTimeToPromote=oneDay;
 	Time bestTimeToBias=oneDay;
 	Time end;
 	{
 		Data copy(data);
 		end=copy.simulateUntil(condition);
-		bestTimeToPromote=end;
+		if(data.find(id).bias>=minBias)bestTimeToPromote=end;
 	}
 	Time start;
 	start=data.simulateUntil(condition::idNextBias(id));
@@ -351,14 +320,14 @@ std::optional<Time> solveSingleBiasTimeUntil(Data data,condition::ft condition=c
 	}
 	return bestTimeToBias;
 }
-std::optional<Time> solveBiasTimeUntil(Data data,condition::ft condition=condition::selfPromote(),const int id=-1){
+std::optional<Time> solveBiasTimeUntil(Data data,condition::ft condition=condition::selfPromote(),const int id=-1,const int minBias=0){
 	Time bestTimeToPromote=oneDay;
 	Time bestTimeToBias=oneDay;
 	Time end;
 	{
 		Data copy(data);
 		end=copy.simulateUntil(condition);
-		bestTimeToPromote=end;
+		if(data.find(id).bias>=minBias)bestTimeToPromote=end;
 	}
 	Time start;
 	start=data.simulateUntil(condition::idNextBias(id));
@@ -366,7 +335,7 @@ std::optional<Time> solveBiasTimeUntil(Data data,condition::ft condition=conditi
 		Data copy(data);
 		copy.bias(id);
 		Time cur=now;
-		for(std::optional<Time>next=solveSingleBiasTimeUntil(copy,condition,id);next.has_value();next=solveSingleBiasTimeUntil(copy,condition,id)){
+		for(std::optional<Time>next=solveSingleBiasTimeUntil(copy,condition,id,minBias);next.has_value();next=solveSingleBiasTimeUntil(copy,condition,id,minBias)){
 			copy.simulateTime(next.value());
 			cur+=next.value();
 			copy.bias(id);
@@ -457,8 +426,8 @@ int main(){
 		auto start=std::chrono::high_resolution_clock::now();
 
 		enum class Choice{
-			Simple,Multiplier,Promote,Both
-		}choice=Choice::Promote;
+			Simple,Multiplier,Promote,Promote7Bias
+		}choice=Choice::Promote7Bias;
 		switch(choice){
 		case Choice::Simple:
 			printETA(original);
@@ -481,13 +450,11 @@ int main(){
 			skipToNextBias(original);
 			printETA(original);
 			break;
-		case Choice::Both:
+		case Choice::Promote7Bias:
 			printBiasTimes(original);
 			printETA(original);
-			std::cout<<"Single Bias to Multi in ";printTime(solveSingleBiasTimeUntil(original,condition::selfNextMultiplier()).value_or(oneDay*365))<<'\n';
-			std::cout<<"Complex Bias to Multi in ";printTime(solveBiasTimeUntil(original,condition::selfNextMultiplier()).value_or(oneDay*365))<<'\n';
-			std::cout<<"Single Bias to Promote in ";printTime(solveSingleBiasTimeUntil(original,condition::selfPromote()).value_or(oneDay*365))<<'\n';
-			std::cout<<"Complex Bias to Promote in ";printTime(solveBiasTimeUntil(original,condition::selfPromote()).value_or(oneDay*365))<<'\n';
+			std::cout<<"Single Bias to Promote in ";printTime(solveSingleBiasTimeUntil(original,condition::selfPromote(),-1,7).value_or(oneDay*365))<<'\n';
+			std::cout<<"Complex Bias to Promote in ";printTime(solveBiasTimeUntil(original,condition::selfPromote(),-1,7).value_or(oneDay*365))<<'\n';
 			skipToNextBias(original);
 			printETA(original);
 			break;
@@ -503,7 +470,10 @@ int main(){
 	}
 }
 /*
-split optimze to multi and promote
+optimize for biggest lead instead of fastest promote
+guarantee going for last bias even if worse at the moment
+
+split optimize to multi and promote
 multi uses bias
 promote uses multi and bias
 special case: cant get enough power to multi before promote -> timeout
