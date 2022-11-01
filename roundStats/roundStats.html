@@ -54,8 +54,7 @@
                username: ranker.username,
                reachedAH: !!find(roundStats.ladders[AHLadder], ranker.accountId),
                becameAH: !!find(roundStats.ladders[AHLadder + 1], ranker.accountId),
-               maxLadder: Object.values(roundStats.ladders).reduce((count, ladder) => count + (find(ladder, ranker
-                  .accountId) ? 1 : 0), 0),
+               maxLadder: Object.values(roundStats.ladders).reduce((count, ladder) => count + (find(ladder, ranker.accountId) ? 1 : 0), 0),
                badges: []
             }
          }).sort((l, r) => l.ahPoints !== r.ahPoints ? l.ahPoints < r.ahPoints : l.accountId > r.accountId);
@@ -105,10 +104,13 @@
          return roundStats;
       }
 
+      let custom = null;
+
       async function download(season, round) {
          'use strict';
-         let file = await fetch(
-            `./roundStats_S${String(season).padStart(2,'0')}R${String(round).padStart(3,'0')}.json`);
+         if(season == -1 && round == -1 && custom)
+            return preprocess(custom);
+         let file = await fetch(`./roundStats_S${String(season).padStart(2,'0')}R${String(round).padStart(3,'0')}.json`);
          if (!file.ok)
             throw 'Season or Round not found.';
          let text = await file.text();
@@ -182,6 +184,14 @@
          let ladder = document.getElementById('ladderInput').value;
          display(season, round, ladder);
       }
+
+      function customLoad(){
+         delete store[-1];
+         custom=JSON.parse(prompt('Enter custom roundStats:'));
+         document.getElementById('seasonInput').value = -1;
+         document.getElementById('roundInput').value = -1;
+         load();
+      }
    </script>
 </head>
 
@@ -195,6 +205,7 @@
          <label for="ladderInput">Ladder</label>
          <input type="number" id="ladderInput" name="ladderInput" min="1" max="999" value="1">
          <button onclick="load()">Load</button>
+         <button onclick="customLoad()">Load custom</button>
       </div>
       <div class="bar"></div>
       <div class="flex-row" style="flex:2;padding:9px 6px;">
