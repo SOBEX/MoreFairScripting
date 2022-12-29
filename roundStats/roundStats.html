@@ -108,9 +108,10 @@
 
       async function download(season, round) {
          'use strict';
-         if(season == -1 && round == -1 && custom)
+         if (season == -1 && round == -1 && custom)
             return preprocess(custom);
-         let file = await fetch(`./roundStats_S${String(season).padStart(2,'0')}R${String(round).padStart(3,'0')}.json`);
+         let file = await fetch(
+            `./roundStats_S${String(season).padStart(2,'0')}R${String(round).padStart(3,'0')}.json`);
          if (!file.ok)
             throw 'Season or Round not found.';
          let text = await file.text();
@@ -185,12 +186,127 @@
          display(season, round, ladder);
       }
 
-      function customLoad(){
+      function customLoad() {
          delete store[-1];
-         custom=JSON.parse(prompt('Enter custom roundStats:'));
+         custom = JSON.parse(prompt('Enter custom roundStats:'));
          document.getElementById('seasonInput').value = -1;
          document.getElementById('roundInput').value = -1;
          load();
+      }
+
+      function getGrapesVinegar(accountIds) {
+         let store = {};
+         for (let ladder in window.roundStats.ladders) {
+            for (let accountId of accountIds) {
+               let ranker = find(window.roundStats.ladders[ladder], accountId);
+               if (ranker) {
+                  if (!(ranker.username in store)) {
+                     store[ranker.username] = {
+                        grapes: [],
+                        vinegar: []
+                     };
+                  }
+                  store[ranker.username].grapes[ladder - 1] = ranker.grapes;
+                  store[ranker.username].vinegar[ladder - 1] = ranker.vinegar;
+               }
+            }
+         }
+         let exportString = 'Grapes\n';
+         for (let user in store) {
+            exportString += user + '\t' + store[user].grapes.join('\t') + '\n';
+         }
+         exportString += '\nVinegar\n';
+         for (let user in store) {
+            exportString += user + '\t' + store[user].vinegar.join('\t') + '\n';
+         }
+         console.log(exportString);
+         return store;
+      }
+
+      function getChampionFarmer() {
+         let store = [];
+         for (let user of window.roundStats.ladders[window.AHLadder].rankers) {
+            let maxVinegar = 0;
+            for (let ladder in window.roundStats.ladders) {
+               let ranker = find(window.roundStats.ladders[ladder], user.accountId);
+               if (ranker) {
+                  let vinegar = Number(ranker.vinegar);
+                  if (vinegar > maxVinegar) {
+                     maxVinegar = vinegar;
+                  }
+               }
+            }
+            store.push({
+               accountId: user.accountId,
+               username: user.username + (user.username == 'Mystery Guest' ? ' #' + user.accountId : ''),
+               maxVinegar: maxVinegar
+            });
+         }
+         store.sort((l, r) => l.maxVinegar != r.maxVinegar ? l.maxVinegar < r.maxVinegar : l.accountId > r.accountId);
+         console.table(store);
+         return store;
+      }
+
+      function getCheapskates() {
+         let store = [];
+         for (let user of window.roundStats.ladders[window.AHLadder].rankers) {
+            /*
+            let autoPromotes= 0;
+            for (let ladder in window.roundStats.ladders) {
+               let ranker = find(window.roundStats.ladders[ladder], user.accountId);
+               if (ranker) {
+                  if(ranker.autoPromote){
+                     autoPromotes++;
+                  }
+               }
+            }
+            store.push({
+               username: user.username,
+               autoPromotes: autoPromotes
+            });
+            */
+            let ranker = find(window.roundStats, user.accountId);
+            store.push({
+               accountId: user.accountId,
+               username: user.username + (user.username == 'Mystery Guest' ? ' #' + user.accountId : ''),
+               autoPromotes: parseInt(find(window.roundStats, user.accountId).autoCount.split('/')[0])
+            });
+         }
+         store.sort((l, r) => l.autoPromotes != r.autoPromotes ? l.autoPromotes > r.autoPromotes : l.accountId > r.accountId);
+         console.table(store);
+         return store;
+      }
+
+      function getChampionOfTheLadder() {
+         let store = [];
+         for (let user of window.roundStats.ladders[1].rankers) {
+            let ladderPoints = [];
+            for (let ladder in window.roundStats.ladders) {
+               let ranker = find(window.roundStats.ladders[ladder], user.accountId);
+               if (ranker) {
+                  let order = window.roundStats.ladders[ladder].rankers.filter(ranker => ranker.growing == false).sort((l, r) => Number(l.points) > Number(r.points));
+                  let i = 0;
+                  for (; i < order.length && i < 10 && order[i].accountId != user.accountId; i++);
+                  if (i != order.length) {
+                     ladderPoints[ladder - 1] = 10 - i;
+                  } else {
+                     ladderPoints[ladder - 1] = 0;
+                  }
+               } else {
+                  ladderPoints[ladder - 1] = 0;
+               }
+            }
+            let totalPoints = ladderPoints.reduce((total, ladder) => total += ladder);
+            store.push({
+               accountId: user.accountId,
+               username: user.username + (user.username == 'Mystery Guest' ? ' #' + user.accountId : ''),
+               ladderPoints: ladderPoints,
+               totalPoints: totalPoints
+            });
+         }
+         store.sort((l, r) => l.totalPoints != r.totalPoints ? l.totalPoints < r.totalPoints : l.accountId > r.accountId);
+         console.table(store);
+         return store;
       }
    </script>
 </head>
