@@ -223,7 +223,7 @@
          return store;
       }
 
-      function getChampionFarmer() {
+      function getChampionFarmer(showTable = true) {
          let store = [];
          for (let user of window.roundStats.ladders[window.AHLadder].rankers) {
             let maxVinegar = 0;
@@ -243,11 +243,13 @@
             });
          }
          store.sort((l, r) => l.maxVinegar != r.maxVinegar ? l.maxVinegar < r.maxVinegar : l.accountId > r.accountId);
-         console.table(store);
+         if (showTable) {
+            console.table(store);
+         }
          return store;
       }
 
-      function getCheapskates() {
+      function getCheapskates(showTable = true) {
          let store = [];
          for (let user of window.roundStats.ladders[window.AHLadder].rankers) {
             /*
@@ -273,11 +275,13 @@
             });
          }
          store.sort((l, r) => l.autoPromotes != r.autoPromotes ? l.autoPromotes > r.autoPromotes : l.accountId > r.accountId);
-         console.table(store);
+         if (showTable) {
+            console.table(store);
+         }
          return store;
       }
 
-      function getChampionOfTheLadder() {
+      function getChampionOfTheLadder(showTable = true, printExport = false) {
          let store = [];
          for (let user of window.roundStats.ladders[1].rankers) {
             let ladderPoints = [];
@@ -305,7 +309,12 @@
             });
          }
          store.sort((l, r) => l.totalPoints != r.totalPoints ? l.totalPoints < r.totalPoints : l.accountId > r.accountId);
-         console.table(store);
+         if (showTable) {
+            console.table(store);
+         }
+         if (printExport) {
+            console.log(store.map(e => e.accountId + '\t' + e.username + '\t' + e.ladderPoints.join('\t') + '\t' + e.totalPoints).join('\n'));
+         }
          return store;
       }
    </script>
