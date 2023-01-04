@@ -194,7 +194,7 @@
          load();
       }
 
-      function getGrapesVinegar(accountIds) {
+      function getGrapesVinegar(accountIds=window.roundStats.ladders[window.AHLadder].rankers.map(e=>e.accountId)) {
          let store = {};
          for (let ladder in window.roundStats.ladders) {
             for (let accountId of accountIds) {
