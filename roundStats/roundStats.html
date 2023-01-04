@@ -40,10 +40,6 @@
       function preprocess(roundStats) {
          'use strict';
          let AHLadder = Object.keys(roundStats.ladders).length - 1;
-         if (true) {
-            window.roundStats = roundStats;
-            window.AHLadder = AHLadder;
-         }
          for (let ladderKey in roundStats.ladders)
             roundStats.ladders[ladderKey].rankers.sort((l, r) => l.rank > r.rank);
          roundStats.rankers = roundStats.ladders[1].rankers.map(ranker => {
@@ -127,7 +123,12 @@
             store[season] = {};
          if (!(round in store[season]))
             store[season][round] = await download(season, round);
-         return structuredClone(store[season][round]);
+         let roundStats=structuredClone(store[season][round]);
+         if (true) {
+            window.roundStats = structuredClone(roundStats);
+            window.AHLadder = Object.keys(roundStats.ladders).length - 1;
+         }
+         return roundStats;
       }
 
       async function get(season, round, ladder) {
