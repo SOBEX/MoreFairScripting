@@ -123,7 +123,7 @@
             store[season] = {};
          if (!(round in store[season]))
             store[season][round] = await download(season, round);
-         let roundStats=structuredClone(store[season][round]);
+         let roundStats = structuredClone(store[season][round]);
          if (true) {
             window.roundStats = structuredClone(roundStats);
             window.AHLadder = Object.keys(roundStats.ladders).length - 1;
@@ -195,7 +195,7 @@
          load();
       }
 
-      function getGrapesVinegar(accountIds=window.roundStats.ladders[window.AHLadder].rankers.map(e=>e.accountId)) {
+      function getGrapesVinegar(accountIds = window.roundStats.ladders[window.AHLadder].rankers.map(e => e.accountId)) {
          let store = {};
          for (let ladder in window.roundStats.ladders) {
             for (let accountId of accountIds) {
@@ -317,6 +317,60 @@
             console.log(store.map(e => e.accountId + '\t' + e.username + '\t' + e.ladderPoints.join('\t') + '\t' + e.totalPoints).join('\n'));
          }
          return store;
+      }
+
+      function getMultiBiasLeaderboard(showTable = true, printExport = false) {
+         let leaderboardDictionary = {};
+         for (let ladder in window.roundStats.ladders) {
+            for (let ranker of window.roundStats.ladders[ladder].rankers) {
+               if (!(ranker.accountId in leaderboardDictionary)) {
+                  leaderboardDictionary[ranker.accountId] = {
+                     'id': ranker.accountId,
+                     'name': ranker.username,
+                     'ladders': {}
+                  };
+               }
+               if (leaderboardDictionary[ranker.accountId].name != ranker.username) {
+                  console.log('namechange of "' + ranker.accountId + '" from "' + leaderboardDictionary[id].name + '" to "' + ranker.username);
+                  leaderboardDictionary[ranker.accountId].name = ranker.username;
+               }
+               leaderboardDictionary[ranker.accountId].ladders[ladder] = [ranker.bias * ranker.multi, ranker.bias, ranker.multi];
+            }
+         }
+         let leaderboardArray = [];
+         for (let i in leaderboardDictionary) {
+            let ranker = leaderboardDictionary[i];
+            let sum = 0;
+            let string = '';
+            for (let ladder in ranker.ladders) {
+               let c = ranker.ladders[ladder];
+               sum += c[0];
+               let b = c[1].toString().padStart(2)
+               let m = c[2].toString().padStart(2)
+               c = c[0].toString().padStart(3);
+               string += ladder.toString().padStart(2) + ' ' + c + '=' + b + '*' + m + '\n';
+            }
+            string += '  ----\n' + sum.toString().padStart(6);
+            ranker.sum = sum;
+            ranker.string = string;
+            leaderboardArray.push(ranker);
+         }
+         leaderboardArray.sort((l, r) => l.sum < r.sum ? 1 : l.sum > r.sum ? -1 : 0);
+         let leaderboardString = '';
+         for (let ranker of leaderboardArray) {
+            leaderboardString += ranker.name + ' (#' + ranker.id + ')\n' + ranker.string + '\n\n';
+         }
+         if (showTable) {
+            console.table(leaderboardArray);
+         }
+         if (printExport) {
+            console.log(leaderboardString);
+         }
+         return {
+            'dictionary': leaderboardDictionary,
+            'array': leaderboardArray,
+            'string': leaderboardString
+         };
       }
    </script>
 </head>
