@@ -189,7 +189,7 @@
 
       function customLoad() {
          delete store[-1];
-         custom = JSON.parse(prompt('Enter custom roundStats:'));
+         custom = JSON.parse(prompt('Enter custom roundStats: (https://fair.kaliburg.de/api/stats/round/raw [?number=<n>])'));
          document.getElementById('seasonInput').value = -1;
          document.getElementById('roundInput').value = -1;
          load();
