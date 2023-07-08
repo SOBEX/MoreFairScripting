@@ -28,6 +28,7 @@
       }
    </style>
    <script type="text/javascript">
+      'use strict';
       function find(ladderStats, accountId) {
          'use strict';
          for (let ranker of ladderStats.rankers) {
@@ -110,7 +111,7 @@
          if (season == -1 && round == -1 && custom)
             return preprocess(custom);
          let file = await fetch(
-            `./roundStats_S${String(season).padStart(2,'0')}R${String(round).padStart(3,'0')}.json`);
+            `./roundStats_S${String(season).padStart(2, '0')}R${String(round).padStart(3, '0')}.json`);
          if (!file.ok)
             throw 'Season or Round not found.';
          let text = await file.text();
