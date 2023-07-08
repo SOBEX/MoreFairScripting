@@ -49,8 +49,8 @@
          roundStats.rankers = roundStats.ladders[1].rankers.map(ranker => {
             return {
                accountId: ranker.accountId,
-               ahPoints: ranker.ahPoints,
-               tag: ranker.tag,
+               assholePoints: ranker.ahPoints || ranker.assholePoints,
+               assholeTag: ranker.tag || ranker.assholeTag,
                username: ranker.username,
                reachedAH: !!find(roundStats.ladders[AHLadder], ranker.accountId),
                becameAH: !!find(roundStats.ladders[AHLadder + 1], ranker.accountId),
