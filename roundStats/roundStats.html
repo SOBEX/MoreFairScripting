@@ -40,8 +40,11 @@
       function preprocess(roundStats) {
          'use strict';
          let AHLadder = Object.keys(roundStats.ladders).length - 1;
-         for (let ladderKey in roundStats.ladders)
-            roundStats.ladders[ladderKey].rankers.sort((l, r) => l.rank > r.rank);
+         for (let ladderKey in roundStats.ladders) {
+            const key = ranker => ranker.accountId + "|" + ranker.rank;
+            const dupes = new Set;
+            roundStats.ladders[ladderKey].rankers=roundStats.ladders[ladderKey].rankers.filter(ranker => !dupes.has(key(ranker)) && dupes.add(key(ranker))).sort((l, r) => l.rank > r.rank);
+         }
          roundStats.rankers = roundStats.ladders[1].rankers.map(ranker => {
             return {
                accountId: ranker.accountId,
