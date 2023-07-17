@@ -57,7 +57,7 @@
                maxLadder: Object.values(roundStats.ladders).reduce((count, ladder) => count + (find(ladder, ranker.accountId) ? 1 : 0), 0),
                badges: []
             }
-         }).sort((l, r) => l.ahPoints !== r.ahPoints ? l.ahPoints < r.ahPoints : l.accountId > r.accountId);
+         }).sort((l, r) => l.assholePoints !== r.assholePoints ? l.assholePoints < r.assholePoints : l.accountId > r.accountId);
          //Captcha - Manual promote on every ladder
          //Cheapskate - Auto promote less than 25% of ladders
          //Mr. Robot - Auto promote 90% or more of ladders
@@ -413,8 +413,8 @@
                <th>power</th>
                <th>rank</th>
                <th>username</th>
-               <th>tag</th>
-               <th>ahPoints</th>
+               <th>assholeTag</th>
+               <th>assholePoints</th>
                <th>grapes</th>
                <th>vinegar</th>
                <th>autoPromote</th>
@@ -429,8 +429,8 @@
                <td>power</td>
                <td>rank</td>
                <td>username</td>
-               <td>tag</td>
-               <td>ahPoints</td>
+               <td>assholeTag</td>
+               <td>assholePoints</td>
                <td>grapes</td>
                <td>vinegar</td>
                <td>autoPromote</td>
@@ -463,8 +463,8 @@
          <table class="full-width" id="rankersTable">
             <tr>
                <th>accountId</th>
-               <th>ahPoints</th>
-               <th>tag</th>
+               <th>assholePoints</th>
+               <th>assholeTag</th>
                <th>username</th>
                <th>reachedAH</th>
                <th>becameAH</th>
@@ -474,8 +474,8 @@
             </tr>
             <tr>
                <td>accountId</td>
-               <td>ahPoints</td>
-               <td>tag</td>
+               <td>assholePoints</td>
+               <td>assholeTag</td>
                <td>username</td>
                <td>reachedAH</td>
                <td>becameAH</td>
