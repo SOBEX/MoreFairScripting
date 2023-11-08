@@ -1,275 +1,406 @@
-//https://mixkit.co/free-sound-effects/alerts/
+'use strict';
 
-// choicebox of dropdown + textfield, parse as just number or /^.*?\D?(\d+)\D?.*?\D?(\d+)\D?.*?$/
-// TODO: throw all alerts into 1 sobAlerter
-// A - asap, alert when able to multi or bias
-// G = Graper stay bottom
-// M##### - multi follow #####, ignore bias
-// B##### = full follow ##### including bias
-// P##### - pass, alert if above #####, for bias maybe
-// R## - rank, alert when at least rank ##, also for bias maybe
-
-//support subscribing to multiple actions
-
-//fix ticker misdetecting lag (without removing after)
-
-window.sobSetup=function(){
-   Fair.register(api=>window.sobStore=api);
-   window.sobStore_actions={'setupConnection':[],'setupGame':[],'setupChat':[],'incrementHighestLadder':[],'ladder/setup':[],'ladder/handleLadderEvent':[],'ladder/handleGlobalEvent':[],'ladder/handlePrivateEvent':[],'ladder/calculate':[],'ladder/handleEvent':[],'ladder/stats/calculate':[],'mod/searchName':[]};
-   window.sobFunctions={};
-   window.sobData={};
-   window.sobSettings={};
-   window.sobFlexbox=document.getElementById('app').children[2].children[0].children[0].children[0].children[0].children[2].appendChild(document.createElement('div'));
-   window.sobFlexbox.parentNode.style.height='auto';
-   window.sobRegister=function(module){
-      "use strict";
-      if(!('id'in module))throw 'error: id missing';
-      const id=module.id;
-      const action='action'in module?module.action:'ladder/calculate';
-      if(!(action in window.sobStore_actions))throw 'error: action invalid';
-      const noop=function(e){};
-      const flexitem='flexitem'in module?module.flexitem:noop;
-      const data='data'in module?module.data:noop;
-      const settings='settings'in module?module.settings:noop;
-      const setup='setup'in module?module.setup:noop;
-      const before='before'in module?module.before:noop;
-      const after='after'in module?module.after:noop;
-      const _flexitem=flexitem();
-      if(_flexitem)window.sobFlexbox.appendChild(_flexitem);
-      const _data=data();
-      window.sobData={...window.sobData,..._data};
-      const _settings=settings();
-      window.sobSettings={...window.sobSettings,..._settings};
-      setup();
-      if(!(action in window.sobFunctions)){
-         window.sobFunctions[action]=[];
-         const sobBeforeWrapper=function(e){window.sobFunctions[action].forEach(m=>m.before(e));};
-         window.sobStore_actions[action].unshift(sobBeforeWrapper);
-         const sobAfterWrapper=function(e){window.sobFunctions[action].forEach(m=>m.after(e));};
-         window.sobStore_actions[action].push(sobAfterWrapper);
-      };
-      window.sobFunctions[action].push({'id':id,'before':before,'after':after});
-   };
-   window.sobUnregister=function(module){
-      "use strict";
-      if(!('id'in module))throw 'error: id missing';
-      const id=module.id;
-      const action='action'in module?module.action:'ladder/calculate';
-      if(action in window.sobFunctions){
-         window.sobFunctions[action]=window.sobFunctions[action].filter(m=>m.id!=id);
-      }
-   };
-   window.sobResetup=function(){
-      if(!(document.getElementById('app').children[2].children[0].children[0].children[0].children[0].children[2].lastChild===window.sobFlexbox)){
-         sobFlexbox.parentNode.removeChild(window.sobFlexbox);
-         document.getElementById('app').children[2].children[0].children[0].children[0].children[0].children[2].appendChild(window.sobFlexbox);
-         window.sobFlexbox.parentNode.style.height='auto';
-      };
-   };
-   window.sobResetupInterval=setInterval(window.sobResetup,1000);
-   Fair.register(api=>api.subscribeToHook('onTick',m=>{for(let a in window.sobStore_actions){window.sobStore_actions[a].forEach(e=>e({message:m}))}}));
-};
-
-window.sobTicker={
-   id:'sobTicker',
-   action:'ladder/calculate',
-   flexitem:function(){
-      "use strict";
-      let div=document.createElement('div');
-      div.innerHTML='<span style="font-family:monospace;"><span id="tickerText"></span> <span id="tickerCount"></span>+<span id="tickerDelta"></span></span>';
-      return div;
+let alertSound={
+   map:new Map(),
+   register(id,uri){
+      let audio=new Audio(uri);
+      audio.loop=true;
+      this.map.set(id,audio);
    },
-   data:function(){
-      "use strict";
-      return{
-         tickerCount:0,
-         tickerDelta:0,
-         tickerSpanText:document.getElementById('tickerText'),
-         tickerSpanCount:document.getElementById('tickerCount'),
-         tickerSpanDelta:document.getElementById('tickerDelta'),
-      };
-   },
-   settings:function(){
-      "use strict";
-      return{
-         tickerFixedLength:4,
-      };
-   },
-   setup:function(){
-      "use strict";
-      window.sobData.tickerSpanText.innerHTML='the clock goes';
-      window.sobData.tickerSpanCount.innerHTML=window.sobData.tickerCount.toFixed(window.sobSettings.tickerFixedLength);
-      window.sobData.tickerSpanDelta.innerHTML=window.sobData.tickerDelta.toFixed(window.sobSettings.tickerFixedLength);
-   },
-   before:function(e){
-      "use strict";
-      if(window.sobData.tickerDelta>=1.5)console.log('lag:',window.sobData.tickerDelta);
-      window.sobData.tickerCount+=window.sobData.tickerDelta;
-      window.sobData.tickerDelta=0;
-      window.sobData.tickerSpanText.innerHTML='tock';
-      window.sobData.tickerSpanCount.innerHTML=window.sobData.tickerCount.toFixed(window.sobSettings.tickerFixedLength);
-      window.sobData.tickerSpanDelta.innerHTML=window.sobData.tickerDelta.toFixed(window.sobSettings.tickerFixedLength);
-   },
-   after:function(e){
-      "use strict";
-      window.sobData.tickerDelta+=Number(e.message.delta);
-      window.sobData.tickerSpanText.innerHTML='tick';
-      window.sobData.tickerSpanCount.innerHTML=window.sobData.tickerCount.toFixed(window.sobSettings.tickerFixedLength);
-      window.sobData.tickerSpanDelta.innerHTML=window.sobData.tickerDelta.toFixed(window.sobSettings.tickerFixedLength);
-   },
-};
-
-window.sobSimExport={
-   id:'sobSimExport',
-   flexitem:function(){
-      "use strict";
-      let div=document.createElement('div');
-      div.innerHTML='<button onclick="window.sobData.simExportCopy();">Copy to clipboard</button> <button ondblclick="window.sobData.simExportDownload();">Download log</button> <input type="checkbox" id="simExportLogActive"> <label for="simExportLogActive">simExportLogActive</label>';
-      return div;
-   },
-   data:function(){
-      "use strict";
-      return{
-         simExportCheckboxLogActive:document.getElementById('simExportLogActive'),
-         simExportLog:[],
-         simExportMake:function(){
-            const space=' ';
-            const endline='\r\n';
-            let sobSimExport=window.sobStore.state.ladder.yourRanker.accountId+space+window.sobStore.state.ladder.number+space+window.sobStore.state.ladder.basePointsToPromote.toFixed()+space+window.sobStore.state.ladder.rankers.length+endline;
-            window.sobStore.state.ladder.rankers.forEach(function(r){
-               sobSimExport+=(r.growing?'1':'0')+space+r.rank+space+r.accountId+space+r.bias+space+r.multi+space+Math.round(r.power)+space+Math.round(r.points)+space;
-               if(r.ahPoints>0){
-                  sobSimExport+='('+r.ahPoints+')'+r.tag+space;
-               };
-               sobSimExport+=r.username.replace(/[\t\n\v\f\r]/g,'')+endline;
-            });
-            return sobSimExport;
-         },
-         simExportCopy:function(){
-            "use strict";
-            navigator.clipboard.writeText(window.sobData.simExportCheckboxLogActive.checked?window.sobData.simExportLog[window.sobData.simExportLog.length-1].content:window.sobData.simExportMake());
-         },
-         simExportDownload:function(){
-            "use strict";
-            let button=document.createElement('a');
-            let blob=new Blob([window.sobData.simExportLog.map(l=>l.time+'\r\n'+l.content).join('\r\n')]);
-            button.href=URL.createObjectURL(blob);
-            button.download='fairGameData'+(new Date()).toJSON().replace(/[-T:.Z]/g,'')+'.txt';
-            button.click();
-            URL.revokeObjectURL(button.href);
-            button.remove();
-         },
-      };
-   },
-   after:function(e){
-      "use strict";
-      if(window.sobData.simExportCheckboxLogActive.checked){
-         window.sobData.simExportLog.push({'time':Date(),'content':window.sobData.simExportMake()});
+   play(id){
+      let audio=this.map.get(id);
+      if(audio.paused){
+         audio.play();
       }
    },
-};
+   stop(id){
+      let audio=this.map.get(id);
+      if(!audio.paused){
+         audio.pause();
+         audio.currentTime=0;
+      }
+   }
+}
 
-window.sobTopNotifier={
-   id:'sobTopNotifier',
-   flexitem:function(){
-      "use strict";
+let alertNotification={
+   map:new Map(),
+   register(id,title,body){
+      let notification={title:title,body:body,notification:undefined};
+      this.map.set(id,notification);
+   },
+   play(id,override){
+      let notification=this.map.get(id);
+      if(notification.notification){
+         notification.notification.close()
+         notification.notification=undefined;
+      }else{
+         notification.notification=new Notification(override.title||notification.title,{body:override.body||notification.body});
+      }
+   },
+   stop(id){
+      let notification=this.map.get(id);
+      if(notification.notification){
+         notification.notification.close()
+         notification.notification=undefined;
+      }
+   }
+}
+
+let sob={
+   api:undefined,
+   store:undefined,
+   callbacks:undefined,
+   divs:undefined,
+   reSetup(){
+      if(!this.divs.parentElement.parentElement){
+         document.body.appendChild(this.divs.parentElement);
+      }
+   },
+   reSetupInterval:undefined,
+   setup(){
+      Fair.register((api)=>this.api=api);
+
+      let newChangeDetected=false;
+      if(JSON.stringify(Object.keys(this.api).sort((l,r)=>l>r))!='["addCallback","getHooks","stores"]'){
+         console.log('New api keys detected.');
+         newChangeDetected=true;
+      }
+      if(JSON.stringify(Object.keys(this.api.getHooks()).sort((l,r)=>l>r))!='["onAccountEvent","onChatEvent","onLadderEvent","onModChatEvent","onModLogEvent","onRoundEvent","onTick"]'){
+         console.log('New events detected.');
+         newChangeDetected=true;
+      }
+      if(JSON.stringify(Object.keys(this.api.stores).sort((l,r)=>l>r))!='["useAccountStore","useChatStore","useLadderStore","useOptionsStore","useRoundStore","useUiStore"]'){
+         console.log('New stores detected.');
+         newChangeDetected=true;
+      }
+      if(newChangeDetected){
+         console.log('Contact SOBEX on Discord or GitHub to let him know.');
+      }
+
+      this.store={
+         account:this.api.stores.useAccountStore(),
+         chat:this.api.stores.useChatStore(),
+         ladder:this.api.stores.useLadderStore(),
+         options:this.api.stores.useOptionsStore(),
+         round:this.api.stores.useRoundStore(),
+         ui:this.api.stores.useUiStore()
+      };
+
+      this.callbacks={};
+      let hooks=this.api.getHooks();
+      for(let hook in hooks){
+         let map=new Map();
+         this.callbacks[hook]=map;
+         this.api.addCallback(hooks[hook],'sob'+hook.charAt(0).toUpperCase()+hook.slice(1),(body)=>{
+            for(let callback of map.values()){
+               callback(this.store,body);
+            }
+         });
+      }
+
       let div=document.createElement('div');
-      div.innerHTML='<input type="checkbox" id="topNotifierActive"> <label for="topNotifierActive">topNotifierActive</label>';
-      return div;
-   },
-   data:function(){
-      "use strict";
-      return{
-         topNotifierCheckboxActive:document.getElementById('topNotifierActive'),
-         notification:null,
-      };
-   },
-   after:function(e){
-      "use strict";
-      if(window.sobData.notification){
-         window.sobData.notification.close();
-      };
-      if(window.sobData.topNotifierCheckboxActive.checked&&window.sobStore.state.ladder.yourRanker.rank===1){
-         window.sobData.notification=new Notification('Promote!',{body:'You\'re first.'});
-      };
-   },
-};
+      div.innerHTML=`
+         <div style="position: absolute; left: 0px; top: 0px; width: auto; height: auto; min-width: 24px; min-height: 24px; max-width: 100%; max-height: 100%; resize: both; overflow: hidden; white-space: nowrap; z-index: 100000001; display: grid; grid-template-rows: 24px minmax(0, 1fr); grid-template-columns: minmax(0, 1fr) 24px;">
+             <div style="background-color: var(--background-dark-color); color: var(--text-dark-highlight-color); grid-column: 1; text-align: left; cursor: move;">SOBEX/MoreFairScripting</div>
+             <div style="background-color: var(--background-light-color); color: var(--text-light-highlight-color); grid-column: 2; text-align: center; cursor: pointer;">-</div>
+             <div style="background-color: var(--background-color); color: var(--text-color); grid-row: 2; grid-column: 1 / span 2; overflow: auto; display: block;"></div>
+         </div>
+      `;
+      let modal=div.firstElementChild;
+      document.body.appendChild(modal);
+      let [drag,minimize,content]=modal.children;
 
-window.sobGraper={
-   id:'sobGraper',
-   flexitem:function(){
-      "use strict";
-      let div=document.createElement('div');
-      div.innerHTML='<input type="checkbox" id="graperActive"> <label for="graperActive">graperActive</label>';
-      return div;
-   },
-   data:function(){
-      "use strict";
-      return{
-         graperCheckboxActive:document.getElementById('graperActive'),
-         graperAlert:new Audio('https://assets.mixkit.co/sfx/preview/mixkit-police-whistle-614.mp3'),
-      };
-   },
-   after:function(e){
-      "use strict";
-      if(window.sobData.graperCheckboxActive.checked&&window.sobStore.state.ladder.yourRanker.growing&&window.sobStore.state.ladder.yourRanker.rank<window.sobStore.state.ladder.rankers.length){
-         window.sobData.graperAlert.play();
-      };
-   },
-};
-
-window.sobFollower=function(e){
-   "use strict";
-   if(window.sobSettings.followerId<0){if(!window.sobSettings.followerSilent)console.log('skipped: not following');return;};
-   if(!window.sobStore.state.ladder.yourRanker.growing){if(!window.sobSettings.followerSilent)console.log('skipped: not growing');return;};
-   if(window.sobSettings.followerId===0){
-      if(!document.getElementsByClassName('btn-group')[1].children[0].classList.contains('disabled')){
-         window.sobData.followerMulti.play();
-         if(!window.sobSettings.followerSilent)console.log('buy multi');
-         return;
-      };
-      if(!window.sobSettings.followerSilent)console.log('cant multi');
-      if(!document.getElementsByClassName('btn-group')[1].children[1].classList.contains('disabled')){
-         window.sobData.followerBias.play();
-         if(!window.sobSettings.followerSilent)console.log('buy bias');
-         return;
-      };
-      if(!window.sobSettings.followerSilent)console.log('cant bias');
-   }else{
-      window.sobStore.state.ladder.rankers.forEach(function(r){
-         if(r.accountId!=window.sobSettings.followerId)return;
-         let s=window.sobStore.state.ladder.yourRanker;
-         if(!window.sobSettings.followerSilent)console.log('found '+r.username+'#'+r.accountId+' at [+'+r.bias+' x'+r.multi+'], self at [+'+s.bias+' x'+s.multi+']');
-         if(s.multi<r.multi){
-            if(!document.getElementsByClassName('btn-group')[1].children[0].classList.contains('disabled')){
-               window.sobData.followerMulti.play();
-               if(!window.sobSettings.followerSilent)console.log('buy multi');
-               return;
-            };
-            if(!window.sobSettings.followerSilent)console.log('cant multi');
-         };
-         if(s.multi<r.multi||(s.multi===r.multi&&s.bias<r.bias)){
-            if(!document.getElementsByClassName('btn-group')[1].children[1].classList.contains('disabled')){
-               window.sobData.followerBias.play();
-               if(!window.sobSettings.followerSilent)console.log('buy bias');
-               return;
-            };
-            if(!window.sobSettings.followerSilent)console.log('cant bias');
-         };
+      let isDragging=false;
+      let dragOffsetX,dragOffsetY;
+      drag.addEventListener('mousedown',function(e){
+         isDragging=true;
+         dragOffsetX=e.clientX-modal.offsetLeft;
+         dragOffsetY=e.clientY-modal.offsetTop;
       });
-   };
-};
-window.sobRegisterSobFollower=function(){
-   window.sobData.followerBias=new Audio('https://assets.mixkit.co/sfx/preview/mixkit-bonus-earned-in-video-game-2058.mp3');
-   window.sobData.followerMulti=new Audio('https://assets.mixkit.co/sfx/preview/mixkit-sci-fi-error-alert-898.mp3');
-   window.sobSettings.followerId=-1;
-   window.sobSettings.followerSilent=false;
-   window.sobFunctions['ladder/calculate'].push({'id':'sobFollower','before':function(e){},'after':window.sobFollower});
+      window.addEventListener('mousemove',function(e){
+         if(isDragging){
+            let left=Math.max(0,e.clientX-dragOffsetX);
+            let top=Math.max(0,e.clientY-dragOffsetY);
+            modal.style.left=left+'px';
+            modal.style.maxWidth='calc(100% - '+left+'px)';
+            modal.style.top=top+'px';
+            modal.style.maxHeight='calc(100% - '+top+'px)';
+         }
+      });
+      window.addEventListener('mouseup',function(e){
+         isDragging=false;
+         if(e.clientX-dragOffsetX<=0){
+            modal.style.width='auto';
+         }
+         if(e.clientY-dragOffsetY<=0){
+            modal.style.height='auto';
+         }
+      });
+
+      let isMinimized=false;
+      let previousHeight=modal.style.height;
+      minimize.addEventListener('click',function(){
+         if(isMinimized){
+            isMinimized=false;
+            modal.style.height=previousHeight;
+            minimize.innerText='-';
+            content.style.display='block';
+            modal.style.resize='both';
+         }else{
+            isMinimized = true;
+            previousHeight=modal.style.height;
+            modal.style.height='24px';
+            minimize.innerText='+';
+            content.style.display='none';
+            modal.style.resize='none';
+         }
+      });
+
+      this.divs=content;
+      this.divs.map=new Map();
+
+      this.reSetupInterval=setInterval(this.reSetup.bind(this),1000);
+   },
+   register(module){
+      let id=module.id;
+
+      module.setup(this.store);
+
+      if('div' in module){
+         let div=module.div(this.store);
+         if(this.divs.map.has(id)){
+            this.divs.replaceChild(div,this.divs.map.get(id));
+            this.divs.map.set(id,div);
+         }else{
+            this.divs.appendChild(div);
+            this.divs.map.set(id,div);
+         }
+      }
+
+      for(let hook in this.callbacks){
+         if(hook in module){
+            this.callbacks[hook].set(id,module[hook].bind(module));
+         }
+      }
+   },
+   unregister(id){
+      if(typeof id==='string'){
+      }else if(typeof id==='object'&&id!==null&&'id'in id){
+         id=id.id;
+      }else{
+         throw new Error('Input must be a string or an object with an id property');
+      }
+
+      for(let hook in this.callbacks){
+         if(this.callbacks[hook].has(id)){
+            this.callbacks[hook].delete(id);
+         }
+      }
+
+      if(this.divs.map.has(id)){
+         let div=this.divs.map.get(id);
+         this.divs.removeChild(div);
+         this.divs.map.delete(id);
+      }
+   }
 };
 
-window.sobSetup();
-//window.sobRegister(window.sobTicker);
-//window.sobRegister(window.sobSimExport);
-window.sobRegister(window.sobTopNotifier);
-window.sobRegister(window.sobGraper);
-//window.sobRegisterSobFollower();
+let sobTest={
+   id:'sobTest',
+   count:undefined,
+   span:undefined,
+   setup(store){
+      this.count=store.ladder.getters.yourRanker.accountId;
+   },
+   div(store){
+      let div=document.createElement('div');
+      div.innerHTML='dont mind me<br>just counting your accountId: <span></span>';
+      [,this.span]=div.children;
+      this.span.textContent=this.count;
+      return div;
+   },
+   onAccountEvent(store,body){
+      this.span.textContent=this.count+=1000000;
+      console.log('onAccountEvent',this,store,body);
+   },
+   onChatEvent(store,body){
+      this.span.textContent=this.count+=100000;
+      console.log('onChatEvent',this,store,body);
+   },
+   onLadderEvent(store,body){
+      this.span.textContent=this.count+=10000;
+      console.log('onLadderEvent',this,store,body);
+   },
+   onModChatEvent(store,body){
+      this.span.textContent=this.count+=1000;
+      console.log('onModChatEvent',this,store,body);
+   },
+   onModLogEvent(store,body){
+      this.span.textContent=this.count+=100;
+      console.log('onModLogEvent',this,store,body);
+   },
+   onRoundEvent(store,body){
+      this.span.textContent=this.count+=10;
+      console.log('onRoundEvent',this,store,body);
+   },
+   onTick(store,body){
+      this.span.textContent=this.count+=1;
+      console.log('onTick',this,store,body);
+   }
+}
+
+let sobTicker={
+   id:'sobTicker',
+   ticks:undefined,
+   deltas:undefined,
+   secondsStart:undefined,
+   spanTicks:undefined,
+   spanDeltas:undefined,
+   spanSeconds:undefined,
+   setup(store){
+      this.ticks=0;
+      this.deltas=0;
+   },
+   div(store){
+      let div=document.createElement('div');
+      div.innerHTML='<span></span> ticks<br><span></span> seconds (in-game)<br><span></span> seconds (real-time)';
+      [this.spanTicks,,this.spanDeltas,,this.spanSeconds]=div.children;
+      return div;
+   },
+   onTick(store,body){
+      let now=performance.now();
+      if(this.secondsStart){
+         this.spanTicks.textContent=this.ticks+=1;
+         this.spanDeltas.textContent=this.deltas+=body.delta;
+         this.spanSeconds.textContent=(now-this.secondsStart)/1000;
+      }else{
+         this.secondsStart=now;
+      }
+   }
+}
+
+let sobSimExport={
+   id:'sobSimExport',
+   log:undefined,
+   checkboxDoLog:undefined,
+   make(store){
+      const space=' ';
+      const endline='\r\n';
+      let sobSimExport=store.ladder.getters.yourRanker.accountId+space+store.ladder.state.number+space+store.ladder.state.basePointsToPromote.toFixed()+space+store.ladder.state.rankers.length+endline;
+      for(let ranker of store.ladder.state.rankers){
+         sobSimExport+=(ranker.growing?'1':'0')+space+ranker.rank+space+ranker.accountId+space+ranker.bias+space+ranker.multi+space+ranker.power.toFixed()+space+ranker.points.toFixed()+space;
+         if(ranker.assholePoints>0){
+            sobSimExport+='('+ranker.assholePoints+')'+ranker.assholeTag+space;
+         }
+         sobSimExport+=ranker.username.replaceAll(/[\t\n\v\f\r]/g,'')+endline;
+      }
+      return sobSimExport;
+   },
+   copy(store){
+      navigator.clipboard.writeText(this.checkboxDoLog.checked?this.log[this.log.length-1].content:this.make(store));
+   },
+   download(){
+      let button=document.createElement('a');
+      let blob=new Blob([this.log.map(l=>l.time+'\r\n'+l.content).join('\r\n')]);
+      button.href=URL.createObjectURL(blob);
+      button.download='fairGameData'+(new Date()).toJSON().replace(/[-T:.Z]/g,'')+'.txt';
+      button.click();
+      URL.revokeObjectURL(button.href);
+   },
+   setup(store){
+      this.log=[];
+   },
+   div(store){
+      let div=document.createElement('div');
+      div.innerHTML='<button>Copy to clipboard</button><br><button>Download log</button><br><input type="checkbox" id="sobSimDoLog"> <label for="sobSimDoLog">Do log</label>';
+      let buttonCopyToClipboard,buttonDownloadLog;
+      [buttonCopyToClipboard,,buttonDownloadLog,,this.checkboxDoLog]=div.children;
+      buttonCopyToClipboard.addEventListener('click',()=>this.copy(store));
+      buttonDownloadLog.addEventListener('dblclick',()=>this.download());
+      return div;
+   },
+   onTick(store,body){
+      if(this.checkboxDoLog.checked){
+         this.log.push({time:Date(),content:this.make(store)});
+      }
+   }
+}
+
+let sobTop={
+   id:'sobTop',
+   previousSound:undefined,
+   previousNotification:undefined,
+   checkboxDoSound:undefined,
+   checkboxDoNotification:undefined,
+   setup(store){
+      this.previousSound=false;
+      this.previousNotification=false;
+      alertSound.register(this.id,'https://assets.mixkit.co/sfx/preview/mixkit-police-whistle-614.mp3');
+      alertNotification.register(this.id,'You\'re top!','Go ahead and press your buttons.');
+   },
+   div(store){
+      let div=document.createElement('div');
+      div.innerHTML='<input type="checkbox" id="sobTopDoSound"> <label for="sobTopDoSound">Do top sound</label><br><input type="checkbox" id="sobTopDoNotification"> <label for="sobTopDoNotification">Do top notification</label>';
+      [this.checkboxDoSound,,,this.checkboxDoNotification]=div.children;
+      return div;
+   },
+   onTick(store,body){
+      if(this.checkboxDoSound.checked&&store.ladder.getters.yourRanker.rank==1){
+         alertSound.play(this.id);
+         this.previousSound=true;
+      }else if(this.previousSound){
+         alertSound.stop(this.id);
+         this.previousSound=false;
+      }
+      if(this.checkboxDoNotification.checked&&store.ladder.getters.yourRanker.rank==1){
+         alertNotification.play(this.id);
+         this.previousNotification=true;
+      }else if(this.previousNotification){
+         alertNotification.stop(this.id);
+         this.previousNotification=false;
+      }
+   }
+}
+
+let sobBottom={
+   id:'sobBottom',
+   previousSound:undefined,
+   previousNotification:undefined,
+   checkboxDoSound:undefined,
+   checkboxDoNotification:undefined,
+   setup(store){
+      this.previousSound=false;
+      this.previousNotification=false;
+      alertSound.register(this.id,'https://assets.mixkit.co/sfx/preview/mixkit-police-whistle-614.mp3');
+      alertNotification.register(this.id,'You\'re no longer bottom!','Go ahead and press your buttons.');
+   },
+   div(store){
+      let div=document.createElement('div');
+      div.innerHTML='<input type="checkbox" id="sobBottomDoSound"> <label for="sobBottomDoSound">Do bottom sound</label><br><input type="checkbox" id="sobBottomDoNotification"> <label for="sobBottomDoNotification">Do bottom notification</label>';
+      [this.checkboxDoSound,,,this.checkboxDoNotification]=div.children;
+      return div;
+   },
+   onTick(store,body){
+      if(this.checkboxDoSound.checked&&store.ladder.getters.yourRanker.rank!=store.ladder.state.rankers.length){
+         alertSound.play(this.id);
+         this.previousSound=true;
+      }else if(this.previousSound){
+         alertSound.stop(this.id);
+         this.previousSound=false;
+      }
+      if(this.checkboxDoNotification.checked&&store.ladder.getters.yourRanker.rank!=store.ladder.state.rankers.length){
+         alertNotification.play(this.id);
+         this.previousNotification=true;
+      }else if(this.previousNotification){
+         alertNotification.stop(this.id);
+         this.previousNotification=false;
+      }
+   }
+}
+
+sob.setup();
+//sob.register(sobTest);
+sob.register(sobTicker);
+sob.register(sobSimExport);
+sob.register(sobTop);
+sob.register(sobBottom);
