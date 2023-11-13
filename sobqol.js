@@ -1,6 +1,6 @@
 'use strict';
 
-let alertSound={
+const sobAlertSound={
    map:new Map(),
    register(id,uri){
       let audio=new Audio(uri);
@@ -22,20 +22,19 @@ let alertSound={
    }
 }
 
-let alertNotification={
+const sobAlertNotification={
    map:new Map(),
    register(id,title,body){
       let notification={title:title,body:body,notification:undefined};
       this.map.set(id,notification);
    },
-   play(id,override){
+   play(id,body){
       let notification=this.map.get(id);
+      let newNotification=new Notification(notification.title,{body:body||notification.body,tag:id,renotify:true,silent:true});
       if(notification.notification){
-         notification.notification.close()
-         notification.notification=undefined;
-      }else{
-         notification.notification=new Notification(override.title||notification.title,{body:override.body||notification.body});
+         notification.notification.close();
       }
+      notification.notification=newNotification;
    },
    stop(id){
       let notification=this.map.get(id);
@@ -46,7 +45,46 @@ let alertNotification={
    }
 }
 
-let sob={
+const sobWorker={
+   //https://stackoverflow.com/a/47806806
+   map:new Map(),
+   register(id,func){
+      const funcstr=func.toString();
+      const workerCode=`
+         const func=new Function('return ${funcstr}')();
+         onmessage=async({data:args})=>{
+            try{
+               const result=await func(...args);
+               self.postMessage({result});
+            }catch(error){
+               self.postMessage({error:error.message});
+            }
+         };
+      `;
+      const workerBlob=new Blob([workerCode],{type:'text/javascript'});
+      const workerUrl=URL.createObjectURL(workerBlob);
+      const worker=new Worker(workerUrl);
+      this.map.set(id,worker);
+   },
+   call(id,...args){
+      const worker=this.map.get(id);
+      worker.postMessage(args.map(arg=>(typeof arg==='function')?{type:'fn',fn:arg.toString()}:arg));
+      return new Promise((next,error)=>{
+         worker.onmessage=({data})=>{
+            if(data.error){
+               error('Error: '+data.error);
+            }else{
+               next(data);
+            }
+         };
+         worker.onerror=({message})=>{
+            error('Error: '+message);
+         };
+      });
+   }
+};
+
+const sobqol={
    api:undefined,
    store:undefined,
    callbacks:undefined,
@@ -100,10 +138,10 @@ let sob={
 
       let div=document.createElement('div');
       div.innerHTML=`
-         <div style="position: absolute; left: 0px; top: 0px; width: auto; height: auto; min-width: 24px; min-height: 24px; max-width: 100%; max-height: 100%; resize: both; overflow: hidden; white-space: nowrap; z-index: 100000001; display: grid; grid-template-rows: 24px minmax(0, 1fr); grid-template-columns: minmax(0, 1fr) 24px;">
-             <div style="background-color: var(--background-dark-color); color: var(--text-dark-highlight-color); grid-column: 1; text-align: left; cursor: move;">SOBEX/MoreFairScripting</div>
-             <div style="background-color: var(--background-light-color); color: var(--text-light-highlight-color); grid-column: 2; text-align: center; cursor: pointer;">-</div>
-             <div style="background-color: var(--background-color); color: var(--text-color); grid-row: 2; grid-column: 1 / span 2; overflow: auto; display: block;"></div>
+         <div style="position: absolute; left: 0px; top: 0px; width: auto; height: auto; min-width: 48px; min-height: 24px; max-width: 100%; max-height: 100%; resize: both; overflow: hidden; white-space: nowrap; z-index: 100000001; display: grid; grid-template-rows: 24px minmax(0, 1fr); grid-template-columns: minmax(0, 1fr) 24px;">
+             <div style="background-color: var(--background-color); color: var(--text-light-highlight-color); grid-column: 1; text-align: left; cursor: move;">SOBEX/MoreFairScripting</div>
+             <div style="background-color: var(--background-dark-color); color: var(--text-dark-highlight-color); grid-column: 2; text-align: center; cursor: pointer;">-</div>
+             <div style="background-color: var(--background-light-color); color: var(--text-color); grid-row: 2; grid-column: 1 / span 2; padding: 12px; overflow: auto; display: block;"></div>
          </div>
       `;
       let modal=div.firstElementChild;
@@ -112,42 +150,50 @@ let sob={
 
       let isDragging=false;
       let dragOffsetX,dragOffsetY;
-      drag.addEventListener('mousedown',function(e){
+      drag.addEventListener('mousedown',(event)=>{
          isDragging=true;
-         dragOffsetX=e.clientX-modal.offsetLeft;
-         dragOffsetY=e.clientY-modal.offsetTop;
+         dragOffsetX=event.clientX-modal.offsetLeft;
+         dragOffsetY=event.clientY-modal.offsetTop;
       });
-      window.addEventListener('mousemove',function(e){
+      window.addEventListener('mousemove',(event)=>{
          if(isDragging){
-            let left=Math.max(0,e.clientX-dragOffsetX);
-            let top=Math.max(0,e.clientY-dragOffsetY);
+            let left=Math.min(Math.max(event.clientX-dragOffsetX,0),window.innerWidth-48);
+            let top=Math.min(Math.max(event.clientY-dragOffsetY,0),window.innerHeight-24);
             modal.style.left=left+'px';
             modal.style.maxWidth='calc(100% - '+left+'px)';
             modal.style.top=top+'px';
             modal.style.maxHeight='calc(100% - '+top+'px)';
          }
       });
-      window.addEventListener('mouseup',function(e){
-         isDragging=false;
-         if(e.clientX-dragOffsetX<=0){
-            modal.style.width='auto';
-         }
-         if(e.clientY-dragOffsetY<=0){
-            modal.style.height='auto';
+      window.addEventListener('mouseup',(event)=>{
+         if(isDragging){
+            isDragging=false;
+            if(event.clientX-dragOffsetX<=0){
+               modal.style.width='auto';
+            }
+            if(event.clientY-dragOffsetY<=0){
+               modal.style.height='auto';
+            }
          }
       });
 
       let isMinimized=false;
-      let previousHeight=modal.style.height;
-      minimize.addEventListener('click',function(){
+      let previousWidthAuto,previousHeight;
+      minimize.addEventListener('click',()=>{
          if(isMinimized){
             isMinimized=false;
+            if(previousWidthAuto){
+               modal.style.width='auto';
+            }
             modal.style.height=previousHeight;
             minimize.innerText='-';
             content.style.display='block';
             modal.style.resize='both';
          }else{
-            isMinimized = true;
+            isMinimized=true;
+            if(previousWidthAuto=modal.style.width==='auto'){
+               modal.style.width=modal.offsetWidth+'px';
+            }
             previousHeight=modal.style.height;
             modal.style.height='24px';
             minimize.innerText='+';
@@ -159,7 +205,7 @@ let sob={
       this.divs=content;
       this.divs.map=new Map();
 
-      this.reSetupInterval=setInterval(this.reSetup.bind(this),1000);
+      this.reSetupInterval=setInterval(()=>this.reSetup(),1000);
    },
    register(module){
       let id=module.id;
@@ -205,7 +251,7 @@ let sob={
    }
 };
 
-let sobTest={
+const sobTest={
    id:'sobTest',
    count:undefined,
    span:undefined,
@@ -249,7 +295,7 @@ let sobTest={
    }
 }
 
-let sobTicker={
+const sobTicker={
    id:'sobTicker',
    ticks:undefined,
    deltas:undefined,
@@ -270,16 +316,19 @@ let sobTicker={
    onTick(store,body){
       let now=performance.now();
       if(this.secondsStart){
-         this.spanTicks.textContent=this.ticks+=1;
-         this.spanDeltas.textContent=this.deltas+=body.delta;
-         this.spanSeconds.textContent=(now-this.secondsStart)/1000;
+         const ticks=this.ticks+=1;
+         const deltas=this.deltas+=body.delta;
+         const seconds=(now-this.secondsStart)/1000;
+         this.spanTicks.textContent=ticks.toFixed(0);
+         this.spanDeltas.textContent=deltas.toFixed(3);
+         this.spanSeconds.textContent=seconds.toFixed(3);
       }else{
          this.secondsStart=now;
       }
    }
 }
 
-let sobSimExport={
+const sobSimExport={
    id:'sobSimExport',
    log:undefined,
    checkboxDoLog:undefined,
@@ -312,7 +361,7 @@ let sobSimExport={
    },
    div(store){
       let div=document.createElement('div');
-      div.innerHTML='<button>Copy to clipboard</button><br><button>Download log</button><br><input type="checkbox" id="sobSimDoLog"> <label for="sobSimDoLog">Do log</label>';
+      div.innerHTML='<button style="color: var(--text-dark-highlight-color);">Copy to clipboard</button><br><button style="color: var(--text-dark-highlight-color);">Download log</button><br><input type="checkbox" id="sobSimDoLog"> <label for="sobSimDoLog">Do log</label>';
       let buttonCopyToClipboard,buttonDownloadLog;
       [buttonCopyToClipboard,,buttonDownloadLog,,this.checkboxDoLog]=div.children;
       buttonCopyToClipboard.addEventListener('click',()=>this.copy(store));
@@ -326,7 +375,7 @@ let sobSimExport={
    }
 }
 
-let sobTop={
+const sobTop={
    id:'sobTop',
    previousSound:undefined,
    previousNotification:undefined,
@@ -335,8 +384,8 @@ let sobTop={
    setup(store){
       this.previousSound=false;
       this.previousNotification=false;
-      alertSound.register(this.id,'https://assets.mixkit.co/sfx/preview/mixkit-police-whistle-614.mp3');
-      alertNotification.register(this.id,'You\'re top!','Go ahead and press your buttons.');
+      sobAlertSound.register(this.id,'https://assets.mixkit.co/sfx/preview/mixkit-police-whistle-614.mp3');
+      sobAlertNotification.register(this.id,'You\'re top!','Go ahead and press your buttons.');
    },
    div(store){
       let div=document.createElement('div');
@@ -346,23 +395,23 @@ let sobTop={
    },
    onTick(store,body){
       if(this.checkboxDoSound.checked&&store.ladder.getters.yourRanker.rank==1){
-         alertSound.play(this.id);
+         sobAlertSound.play(this.id);
          this.previousSound=true;
       }else if(this.previousSound){
-         alertSound.stop(this.id);
+         sobAlertSound.stop(this.id);
          this.previousSound=false;
       }
       if(this.checkboxDoNotification.checked&&store.ladder.getters.yourRanker.rank==1){
-         alertNotification.play(this.id);
+         sobAlertNotification.play(this.id);
          this.previousNotification=true;
       }else if(this.previousNotification){
-         alertNotification.stop(this.id);
+         sobAlertNotification.stop(this.id);
          this.previousNotification=false;
       }
    }
 }
 
-let sobBottom={
+const sobBottom={
    id:'sobBottom',
    previousSound:undefined,
    previousNotification:undefined,
@@ -371,8 +420,8 @@ let sobBottom={
    setup(store){
       this.previousSound=false;
       this.previousNotification=false;
-      alertSound.register(this.id,'https://assets.mixkit.co/sfx/preview/mixkit-police-whistle-614.mp3');
-      alertNotification.register(this.id,'You\'re no longer bottom!','Go ahead and press your buttons.');
+      sobAlertSound.register(this.id,'https://assets.mixkit.co/sfx/preview/mixkit-police-whistle-614.mp3');
+      sobAlertNotification.register(this.id,'You\'re no longer bottom!','Go ahead and press your buttons.');
    },
    div(store){
       let div=document.createElement('div');
@@ -382,25 +431,287 @@ let sobBottom={
    },
    onTick(store,body){
       if(this.checkboxDoSound.checked&&store.ladder.getters.yourRanker.rank!=store.ladder.state.rankers.length){
-         alertSound.play(this.id);
+         sobAlertSound.play(this.id);
          this.previousSound=true;
       }else if(this.previousSound){
-         alertSound.stop(this.id);
+         sobAlertSound.stop(this.id);
          this.previousSound=false;
       }
       if(this.checkboxDoNotification.checked&&store.ladder.getters.yourRanker.rank!=store.ladder.state.rankers.length){
-         alertNotification.play(this.id);
+         sobAlertNotification.play(this.id);
          this.previousNotification=true;
       }else if(this.previousNotification){
-         alertNotification.stop(this.id);
+         sobAlertNotification.stop(this.id);
          this.previousNotification=false;
       }
    }
 }
 
-sob.setup();
-//sob.register(sobTest);
-sob.register(sobTicker);
-sob.register(sobSimExport);
-sob.register(sobTop);
-sob.register(sobBottom);
+const sobAlerter={
+   alerts:undefined,
+   previousSound:undefined,
+   previousNotification:undefined,
+   divs:undefined,
+   add(description,number){
+      let test;
+      switch(description){
+      case 'Become top':
+         test=(store)=>store.ladder.getters.yourRanker?.rank===1;
+         break;
+      case 'Leave grapes floor':
+         test=(store)=>store.ladder.getters.yourRanker?.rank!==store.ladder.state.rankers.length;
+         break;
+      case 'BERSERK!!':
+         test=(store)=>Array.from(document.querySelectorAll('button.whitespace-nowrap')).some(button=>!button.disabled);
+         break;
+      case 'Multi ready':
+         test=(store)=>document.querySelectorAll('button.whitespace-nowrap')[0]?.disabled===false;
+         break;
+      case 'Bias ready':
+         test=(store)=>document.querySelectorAll('button.whitespace-nowrap')[1]?.disabled===false;
+         break;
+      case 'Auto ready':
+         test=(store)=>document.querySelectorAll('button.whitespace-nowrap')[2]?.disabled===false;
+         break;
+      case 'Throw ready':
+         test=(store)=>((button=>button&&button.textContent==='Throw all Vinegar'&&!button.disabled)(document.querySelectorAll('button.whitespace-nowrap')[3]));
+         break;
+      case 'Promote ready':
+         test=(store)=>((button=>button&&button.textContent!=='Throw all Vinegar'&&!button.disabled)(document.querySelectorAll('button.whitespace-nowrap')[3]));
+         break;
+      case 'Points reached':
+         description=number+' points reached';
+         test=(store)=>store.ladder.getters.yourRanker?.points?.gte(number);
+         break;
+      case 'Power reached':
+         description=number+' power reached';
+         test=(store)=>store.ladder.getters.yourRanker?.power?.gte(number);
+         break;
+      case 'Bias follow':
+         description+=' #'+number;
+         test=(store)=>store.ladder.getters.yourRanker?.bias<store.ladder.state.rankers.find((ranker)=>ranker.accountId===number)?.bias;
+         break;
+      case 'Multi follow':
+         description+=' #'+number;
+         test=(store)=>store.ladder.getters.yourRanker?.multi<store.ladder.state.rankers.find((ranker)=>ranker.accountId===number)?.multi;
+         break;
+      case 'Pass ranker':
+         description+=' #'+number;
+         test=(store)=>store.ladder.getters.yourRanker?.rank<store.ladder.state.rankers.find((ranker)=>ranker.accountId===number)?.rank;
+         break;
+      case 'Become rank':
+         description+=' '+number;
+         test=(store)=>store.ladder.getters.yourRanker?.rank===number;
+         break;
+      default:
+         description='ERROR: Unrecognized type "'+description+'"';
+         test=(store)=>false;
+         break;
+      }
+      if(!this.alerts.has(description)){
+         let div=document.createElement('div');
+         div.innerHTML='<button>🗑</button>&nbsp;&nbsp;&nbsp;<input type="checkbox"> <input type="checkbox"> '+description;
+         let [button,checkboxSound,checkboxNotification]=div.children;
+         button.addEventListener('click',()=>{
+            this.divs.removeChild(div);
+            this.alerts.delete(description);
+         });
+         this.alerts.set(description,{test:test,checkboxSound:checkboxSound,checkboxNotification:checkboxNotification});
+         this.divs.appendChild(div);
+      }
+   },
+   setup(store){
+      this.alerts=new Map();
+      this.previousSound=false;
+      this.previousNotification=false;
+      sobAlertSound.register(this.id,'https://assets.mixkit.co/sfx/preview/mixkit-police-whistle-614.mp3');
+      sobAlertNotification.register(this.id,'Chad is calling!','ERROR: No alerts active');
+   },
+   div(store){
+      let div=document.createElement('div');
+      div.innerHTML='<select></select> <input type="number" min="0" value="0" style="background-color: inherit; width: 100px;"> <button style="color: var(--text-dark-highlight-color);">Add Alert</button><br><div></div>';
+      let dropdown,input,button;
+      [dropdown,input,button,,this.divs]=div.children;
+      for(let description of [
+         'Become top',
+         'Leave grapes floor',
+         'BERSERK!!',
+         'Multi ready',
+         'Bias ready',
+         'Auto ready',
+         'Throw ready',
+         'Promote ready',
+         'Points reached',
+         'Power reached',
+         'Bias follow',
+         'Multi follow',
+         'Pass ranker',
+         'Become rank'
+      ]){
+         let option=document.createElement('option');
+         option.value=description;
+         option.text=description;
+         dropdown.appendChild(option);
+      }
+      button.addEventListener('click',()=>this.add(dropdown.value,parseInt(input.value)));
+      return div;
+   },
+   onTick(store,body){
+      let alerted=false;
+      let message='';
+      for(let [description,alert] of this.alerts.entries()){
+         let active=alert.test(store);
+         if(alert.checkboxSound.checked&&active){
+            alerted=true;
+         }
+         if(alert.checkboxNotification.checked&&active){
+            message+=description+'\n';
+         }
+      }
+      if(alerted){
+         sobAlertSound.play(this.id);
+         this.previousSound=true;
+      }else if(this.previousSound){
+         sobAlertSound.stop(this.id);
+         this.previousSound=false;
+      }
+      if(message){
+         sobAlertNotification.play(this.id,message);
+         this.previousNotification=true;
+      }else if(this.previousNotification){
+         sobAlertNotification.stop(this.id);
+         this.previousNotification=false;
+      }
+   }
+}
+
+const sobEta={
+   id:'sobEta',
+   tick:undefined,
+   out:undefined,
+   getLadder(store,bias,multi,accountId){
+      let yourRanker;
+      if(accountId){
+         yourRanker=store.ladder.rankers.find((ranker)=>ranker.accountId===accountId);
+      }else{
+         yourRanker=store.ladder.getters.yourRanker;
+         accountId=yourRanker.accountId;
+      }
+      bias??=yourRanker.bias;
+      multi??=yourRanker.multi;
+      const resetPower=multi>yourRanker.multi;
+      const resetPoints=resetPower||bias>yourRanker.bias;
+      let ladder=store.ladder.state.rankers.map((ranker)=>ranker.accountId===accountId?{
+         username:ranker.username,
+         points:resetPoints?0:ranker.points.toNumber(),
+         power:resetPower?0:ranker.power.toNumber(),
+         bias:bias,
+         multi:multi,
+         growing:ranker.growing,
+         ticks:0
+      }:{
+         username:ranker.username,
+         points:ranker.points.toNumber(),
+         power:ranker.power.toNumber(),
+         bias:ranker.bias,
+         multi:ranker.multi,
+         growing:ranker.growing,
+         ticks:0
+      }).sort((l,r)=>r.points-l.points);
+      ladder.growers=ladder.reduce((growers,ranker)=>ranker.growing?growers+1:growers,0);
+      return ladder;
+   },
+   getRequirement(store){
+      return store.ladder.state.basePointsToPromote.toNumber();
+   },
+   simulate:function(ladder,requirement){
+      while(ladder.growers>0){
+         for(let index=0;index<ladder.length;index++){
+            if(ladder[index].growing){
+               if(index>0){
+                  ladder[index].power+=(index+ladder[index].bias)*ladder[index].multi;
+               }
+               ladder[index].points+=ladder[index].power;
+               ladder[index].ticks++;
+               for(let i=index;i>0&&ladder[i].points>ladder[i-1].points;i--){
+                  [ladder[i],ladder[i-1]]=[ladder[i-1],ladder[i]];
+               }
+            }
+         }
+         if(ladder[0].growing&&ladder[0].points>=requirement){
+            ladder[0].growing=false;
+            ladder.growers--;
+         }
+      }
+      const result=ladder.map((ranker)=>({
+         time:new Date(Date.now()+ranker.ticks*1000).toLocaleTimeString(),
+         ticks:((ticks)=>{
+            const seconds=ticks%60;
+            ticks=(ticks-seconds)/60;
+            const minutes=ticks%60;
+            ticks=(ticks-minutes)/60;
+            const hours=ticks;
+            return `${String(hours)}h ${String(minutes).padStart(2,' ')}m ${String(Math.floor(seconds)).padStart(2,' ')}s`
+         })(ranker.ticks),
+         points:ranker.points.toFixed(),
+         power:ranker.power.toFixed(),
+         bias:ranker.bias.toFixed(),
+         multi:ranker.multi.toFixed(),
+         username:ranker.username
+      }));
+      const max=result.reduce((max,resulter)=>{
+         max.time=Math.max(max.time||0,resulter.time.length);
+         max.ticks=Math.max(max.ticks||0,resulter.ticks.length);
+         max.points=Math.max(max.points||0,resulter.points.length);
+         max.power=Math.max(max.power||0,resulter.power.length);
+         max.bias=Math.max(max.bias||0,resulter.bias.length);
+         max.multi=Math.max(max.multi||0,resulter.multi.length);
+         max.username=Math.max(max.username||0,resulter.username.length);
+         return max;
+      },{});
+      return result.reverse().map(resulter=>`${resulter.time.padStart(max.time)}  ${resulter.ticks.padStart(max.ticks)}  ${resulter.points.padStart(max.points)}  ${resulter.power.padStart(max.power)}  ${resulter.bias.padStart(max.bias)}  ${resulter.multi.padStart(max.multi)}  ${resulter.username}`);
+   },
+   eta(store,bias,multi){
+      this.tick=false;
+      let ladder=this.getLadder(store,bias,multi);
+      const requirement=this.getRequirement(store);
+      this.out.textContent=this.simulate(ladder,requirement).join('\n');
+   },
+   setup(store){
+      this.tick=false;
+      sobWorker.register(this.id,this.simulate);
+   },
+   div(store){
+      let div=document.createElement('div');
+      div.innerHTML='<pre></pre>';
+      [this.out]=div.children;
+      return div;
+   },
+   onTick(store,body){
+      this.tick=true;
+      this.eta(store);
+   }
+}
+
+sobqol.setup();
+//sobqol.register(sobTest);
+sobqol.register(sobTicker);
+//sobqol.register(sobSimExport);
+//sobqol.register(sobTop);
+//sobqol.register(sobBottom);
+sobqol.register(sobAlerter);
+sobAlerter.add('Become top',0);
+sobAlerter.add('Leave grapes floor',0);
+//sobAlerter.add('BERSERK!!',0);
+sobAlerter.add('Multi ready',0);
+sobAlerter.add('Bias ready',0);
+//sobAlerter.add('Auto ready',0);
+//sobAlerter.add('Throw ready',0);
+sobAlerter.add('Promote ready',0);
+//sobAlerter.add('Points reached',1000000);
+//sobAlerter.add('Power reached',10000);
+//sobAlerter.add('Bias follow',41894);
+//sobAlerter.add('Multi follow',41894);
+//sobAlerter.add('Pass ranker',41894);
+//sobAlerter.add('Become rank',2);
+sobqol.register(sobEta);
