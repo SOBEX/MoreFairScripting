@@ -51,9 +51,10 @@ const sobWorker={
    register(id,func){
       const funcstr=func.toString();
       const workerCode=`
-         const func=new Function('return ${funcstr}')();
+         const func=${funcstr};
          onmessage=async({data:args})=>{
             try{
+               args=args.map(p=>(p.type==='fn')?new Function(\`return \${p.fn}\`)():p);
                const result=await func(...args);
                self.postMessage({result});
             }catch(error){
@@ -587,7 +588,8 @@ const sobAlerter={
 
 const sobEta={
    id:'sobEta',
-   tick:undefined,
+   busy:undefined,
+   dropdown:undefined,
    out:undefined,
    getLadder(store,bias,multi,accountId){
       let yourRanker;
@@ -669,26 +671,88 @@ const sobEta={
          max.username=Math.max(max.username||0,resulter.username.length);
          return max;
       },{});
+
       return result.reverse().map(resulter=>`${resulter.time.padStart(max.time)}  ${resulter.ticks.padStart(max.ticks)}  ${resulter.points.padStart(max.points)}  ${resulter.power.padStart(max.power)}  ${resulter.bias.padStart(max.bias)}  ${resulter.multi.padStart(max.multi)}  ${resulter.username}`);
    },
-   eta(store,bias,multi){
-      this.tick=false;
-      let ladder=this.getLadder(store,bias,multi);
-      const requirement=this.getRequirement(store);
-      this.out.textContent=this.simulate(ladder,requirement).join('\n');
+   eta(ladder,requirement){
+      this.busy=true;
+      sobWorker.call(this.id,ladder,requirement).then(({result})=>this.out.textContent=result.join('\n'),this.busy=false).catch(({error})=>console.error('error',error));
+   },
+   nowEta(store){
+      return [this.getLadder(store),this.getRequirement(store)];
+   },
+   biasEta(store){
+      return [this.getLadder(store,store.ladder.getters.yourRanker.bias+1),this.getRequirement(store)];
+   },
+   multiEta(store){
+      return [this.getLadder(store,0,store.ladder.getters.yourRanker.multi+1),this.getRequirement(store)];
+   },
+   multiPlusEta(store){
+      const yourRanker=store.ladder.getters.yourRanker;
+      return [this.getLadder(store,yourRanker.bias,yourRanker.multi+1),this.getRequirement(store)];
+   },
+   eta1(store=sobqol.store){
+      return ['',
+         this.simulate(...this.nowEta(store)).join('\n')
+      ].join('\n\n');
+   },
+   eta2(store=sobqol.store){
+      return ['',
+         this.simulate(...this.nowEta(store)).join('\n'),
+         this.simulate(...this.biasEta(store)).join('\n')
+      ].join('\n\n');
+   },
+   eta3(store=sobqol.store){
+      return ['',
+         this.simulate(...this.nowEta(store)).join('\n'),
+         this.simulate(...this.biasEta(store)).join('\n'),
+         this.simulate(...this.multiEta(store)).join('\n')
+      ].join('\n\n');
    },
    setup(store){
-      this.tick=false;
+      this.busy=false;
       sobWorker.register(this.id,this.simulate);
    },
    div(store){
       let div=document.createElement('div');
-      div.innerHTML='<pre></pre>';
-      [this.out]=div.children;
+      div.innerHTML='ETA: <select></select><br><pre></pre>';
+      [this.dropdown,,this.out]=div.children;
+      for(let description of [
+         'OFF',
+         'NOW',
+         'BIAS',
+         'MULTI',
+         'MULTI+'
+      ]){
+         let option=document.createElement('option');
+         option.value=description;
+         option.text=description;
+         this.dropdown.appendChild(option);
+      }
       return div;
    },
    onTick(store,body){
-      this.tick=true;
-      this.eta(store);
+      if(!this.busy){
+         switch(this.dropdown.value){
+            case 'OFF':
+               this.out.textContent='';
+               break;
+            case 'NOW':
+               this.eta(...this.nowEta(store));
+               break;
+            case 'BIAS':
+               this.eta(...this.biasEta(store));
+               break;
+            case 'MULTI':
+               this.eta(...this.multiEta(store));
+               break;
+            case 'MULTI+':
+               this.eta(...this.multiPlusEta(store));
+               break;
+            default:
+               this.out.textContent='ERROR: Unrecognized type "'+this.dropdown.value+'"';
+               break;
+         }
+      }
    }
 }
