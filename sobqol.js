@@ -25,7 +25,7 @@ const sobAlertSound={
 const sobAlertNotification={
    map:new Map(),
    register(id,title,body){
-      let notification={title:title,body:body,notification:undefined};
+      let notification={title,body,notification:undefined};
       this.map.set(id,notification);
    },
    play(id,body){
@@ -100,16 +100,20 @@ const sobqol={
       Fair.register((api)=>this.api=api);
 
       let newChangeDetected=false;
-      if(JSON.stringify(Object.keys(this.api).sort((l,r)=>l>r))!='["addCallback","getHooks","stores"]'){
+      if(JSON.stringify(Object.keys(this.api).sort((l,r)=>l>r))!='["addCallback","getHooks","stores","utils"]'){
          console.log('New api keys detected.');
          newChangeDetected=true;
       }
-      if(JSON.stringify(Object.keys(this.api.getHooks()).sort((l,r)=>l>r))!='["onAccountEvent","onChatEvent","onLadderEvent","onModChatEvent","onModLogEvent","onRoundEvent","onTick"]'){
+      if(JSON.stringify(Object.keys(this.api.getHooks()).sort((l,r)=>l>r))!='["onAccountEvent","onChatEvent","onLadderEvent","onModChatEvent","onModLogEvent","onRoundEvent","onTick","onUserEvent","onVinegarThrowEvent"]'){
          console.log('New events detected.');
          newChangeDetected=true;
       }
       if(JSON.stringify(Object.keys(this.api.stores).sort((l,r)=>l>r))!='["useAccountStore","useChatStore","useLadderStore","useOptionsStore","useRoundStore","useUiStore"]'){
          console.log('New stores detected.');
+         newChangeDetected=true;
+      }
+      if(JSON.stringify(Object.keys(this.api.utils).sort((l,r)=>l>r))!='["useLadderUtils"]'){
+         console.log('New utils detected.');
          newChangeDetected=true;
       }
       if(newChangeDetected){
@@ -122,7 +126,8 @@ const sobqol={
          ladder:this.api.stores.useLadderStore(),
          options:this.api.stores.useOptionsStore(),
          round:this.api.stores.useRoundStore(),
-         ui:this.api.stores.useUiStore()
+         ui:this.api.stores.useUiStore(),
+         utils:this.api.utils.useLadderUtils()
       };
 
       this.callbacks={};
@@ -211,7 +216,9 @@ const sobqol={
    register(module){
       let id=module.id;
 
-      module.setup(this.store);
+      if('setup' in module){
+         module.setup(this.store);
+      }
 
       if('div' in module){
          let div=module.div(this.store);
@@ -261,38 +268,73 @@ const sobTest={
    },
    div(store){
       let div=document.createElement('div');
-      div.innerHTML='dont mind me<br>just counting your accountId: <span></span>';
+      div.innerHTML='dont mind me<br/>just counting your accountId: <span></span>';
       [,this.span]=div.children;
       this.span.textContent=this.count;
       return div;
    },
    onAccountEvent(store,body){
-      this.span.textContent=this.count+=1000000;
-      console.log('onAccountEvent',this,store,body);
+      this.span.textContent=this.count+=100000000;
+      console.log('onAccountEvent',{sobTest:this,store,body});
    },
    onChatEvent(store,body){
-      this.span.textContent=this.count+=100000;
-      console.log('onChatEvent',this,store,body);
+      this.span.textContent=this.count+=10000000;
+      console.log('onChatEvent',{sobTest:this,store,body});
    },
    onLadderEvent(store,body){
-      this.span.textContent=this.count+=10000;
-      console.log('onLadderEvent',this,store,body);
+      this.span.textContent=this.count+=1000000;
+      console.log('onLadderEvent',{sobTest:this,store,body});
    },
    onModChatEvent(store,body){
-      this.span.textContent=this.count+=1000;
-      console.log('onModChatEvent',this,store,body);
+      this.span.textContent=this.count+=100000;
+      console.log('onModChatEvent',{sobTest:this,store,body});
    },
    onModLogEvent(store,body){
-      this.span.textContent=this.count+=100;
-      console.log('onModLogEvent',this,store,body);
+      this.span.textContent=this.count+=10000;
+      console.log('onModLogEvent',{sobTest:this,store,body});
    },
    onRoundEvent(store,body){
-      this.span.textContent=this.count+=10;
-      console.log('onRoundEvent',this,store,body);
+      this.span.textContent=this.count+=1000;
+      console.log('onRoundEvent',{sobTest:this,store,body});
    },
    onTick(store,body){
+      this.span.textContent=this.count+=100;
+      console.log('onTick',{sobTest:this,store,body});
+   },
+   onUserEvent(store,body){
+      this.span.textContent=this.count+=10;
+      console.log('onUserEvent',{sobTest:this,store,body});
+   },
+   onVinegarThrowEvent(store,body){
       this.span.textContent=this.count+=1;
-      console.log('onTick',this,store,body);
+      console.log('onVinegarThrowEvent',{sobTest:this,store,body});
+   }
+}
+
+const sobPermissions={
+   id:'sobPermissions',
+   button:undefined,
+   div(store){
+      let div=document.createElement('div');
+      if('Notification' in window&&Notification.permission!=='granted'){
+         div.innerHTML='<button style="color: var(--text-dark-highlight-color);">Request notification permission</button>';
+         const [buttonRequestNotificationPermission]=div.children;
+         buttonRequestNotificationPermission.addEventListener('click',()=>{
+            if('Notification' in window){
+               if(Notification.permission!=='granted'){
+                  Notification.requestPermission().then(permission=>{
+                     if(permission!=='granted'){
+                        console.log('Notification permission not granted.');
+                     }
+                  });
+            }
+            }else{
+               console.log('Notifications not supported.');
+            }
+            div.innerHTML='';
+         });
+      }
+      return div;
    }
 }
 
@@ -310,7 +352,7 @@ const sobTicker={
    },
    div(store){
       let div=document.createElement('div');
-      div.innerHTML='<span></span> ticks<br><span></span> seconds (in-game)<br><span></span> seconds (real-time)';
+      div.innerHTML='<span></span> ticks<br/><span></span> seconds (in-game)<br/><span></span> seconds (real-time)';
       [this.spanTicks,,this.spanDeltas,,this.spanSeconds]=div.children;
       return div;
    },
@@ -362,7 +404,7 @@ const sobSimExport={
    },
    div(store){
       let div=document.createElement('div');
-      div.innerHTML='<button style="color: var(--text-dark-highlight-color);">Copy to clipboard</button><br><button style="color: var(--text-dark-highlight-color);">Download log</button><br><input type="checkbox" id="sobSimDoLog"> <label for="sobSimDoLog">Do log</label>';
+      div.innerHTML='<button style="color: var(--text-dark-highlight-color);">Copy to clipboard</button><br/><button style="color: var(--text-dark-highlight-color);">Download log</button><br/><input type="checkbox" id="sobSimDoLog"> <label for="sobSimDoLog">Do log</label>';
       let buttonCopyToClipboard,buttonDownloadLog;
       [buttonCopyToClipboard,,buttonDownloadLog,,this.checkboxDoLog]=div.children;
       buttonCopyToClipboard.addEventListener('click',()=>this.copy(store));
@@ -385,29 +427,31 @@ const sobTop={
    setup(store){
       this.previousSound=false;
       this.previousNotification=false;
-      sobAlertSound.register(this.id,'https://assets.mixkit.co/sfx/preview/mixkit-police-whistle-614.mp3');
+      sobAlertSound.register(this.id,'https://sobex.github.io/MoreFairScripting/mixkit-police-whistle-614.wav');
       sobAlertNotification.register(this.id,'You\'re top!','Go ahead and press your buttons.');
    },
    div(store){
       let div=document.createElement('div');
-      div.innerHTML='<input type="checkbox" id="sobTopDoSound"> <label for="sobTopDoSound">Do top sound</label><br><input type="checkbox" id="sobTopDoNotification"> <label for="sobTopDoNotification">Do top notification</label>';
+      div.innerHTML='<input type="checkbox" id="sobTopDoSound"> <label for="sobTopDoSound">Do top sound</label><br/><input type="checkbox" id="sobTopDoNotification"> <label for="sobTopDoNotification">Do top notification</label>';
       [this.checkboxDoSound,,,this.checkboxDoNotification]=div.children;
       return div;
    },
    onTick(store,body){
-      if(this.checkboxDoSound.checked&&store.ladder.getters.yourRanker.rank==1){
-         sobAlertSound.play(this.id);
-         this.previousSound=true;
-      }else if(this.previousSound){
-         sobAlertSound.stop(this.id);
-         this.previousSound=false;
-      }
-      if(this.checkboxDoNotification.checked&&store.ladder.getters.yourRanker.rank==1){
-         sobAlertNotification.play(this.id);
-         this.previousNotification=true;
-      }else if(this.previousNotification){
-         sobAlertNotification.stop(this.id);
-         this.previousNotification=false;
+      if(store.ladder.getters.yourRanker?.rank===1){
+         if(this.checkboxDoSound.checked){
+            sobAlertSound.play(this.id);
+            this.previousSound=true;
+         }else if(this.previousSound){
+            sobAlertSound.stop(this.id);
+            this.previousSound=false;
+         }
+         if(this.checkboxDoNotification.checked){
+            sobAlertNotification.play(this.id);
+            this.previousNotification=true;
+         }else if(this.previousNotification){
+            sobAlertNotification.stop(this.id);
+            this.previousNotification=false;
+         }
       }
    }
 }
@@ -421,34 +465,37 @@ const sobBottom={
    setup(store){
       this.previousSound=false;
       this.previousNotification=false;
-      sobAlertSound.register(this.id,'https://assets.mixkit.co/sfx/preview/mixkit-police-whistle-614.mp3');
+      sobAlertSound.register(this.id,'https://sobex.github.io/MoreFairScripting/mixkit-police-whistle-614.wav');
       sobAlertNotification.register(this.id,'You\'re no longer bottom!','Go ahead and press your buttons.');
    },
    div(store){
       let div=document.createElement('div');
-      div.innerHTML='<input type="checkbox" id="sobBottomDoSound"> <label for="sobBottomDoSound">Do bottom sound</label><br><input type="checkbox" id="sobBottomDoNotification"> <label for="sobBottomDoNotification">Do bottom notification</label>';
+      div.innerHTML='<input type="checkbox" id="sobBottomDoSound"> <label for="sobBottomDoSound">Do bottom sound</label><br/><input type="checkbox" id="sobBottomDoNotification"> <label for="sobBottomDoNotification">Do bottom notification</label>';
       [this.checkboxDoSound,,,this.checkboxDoNotification]=div.children;
       return div;
    },
    onTick(store,body){
-      if(this.checkboxDoSound.checked&&store.ladder.getters.yourRanker.rank!=store.ladder.state.rankers.length){
-         sobAlertSound.play(this.id);
-         this.previousSound=true;
-      }else if(this.previousSound){
-         sobAlertSound.stop(this.id);
-         this.previousSound=false;
-      }
-      if(this.checkboxDoNotification.checked&&store.ladder.getters.yourRanker.rank!=store.ladder.state.rankers.length){
-         sobAlertNotification.play(this.id);
-         this.previousNotification=true;
-      }else if(this.previousNotification){
-         sobAlertNotification.stop(this.id);
-         this.previousNotification=false;
+      if(store.ladder.getters.yourRanker?.rank!==store.ladder.state.rankers.length){
+         if(this.checkboxDoSound.checked){
+            sobAlertSound.play(this.id);
+            this.previousSound=true;
+         }else if(this.previousSound){
+            sobAlertSound.stop(this.id);
+            this.previousSound=false;
+         }
+         if(this.checkboxDoNotification.checked){
+            sobAlertNotification.play(this.id);
+            this.previousNotification=true;
+         }else if(this.previousNotification){
+            sobAlertNotification.stop(this.id);
+            this.previousNotification=false;
+         }
       }
    }
 }
 
 const sobAlerter={
+   id:'sobAlerter',
    alerts:undefined,
    previousSound:undefined,
    previousNotification:undefined,
@@ -517,7 +564,7 @@ const sobAlerter={
             this.divs.removeChild(div);
             this.alerts.delete(description);
          });
-         this.alerts.set(description,{test:test,checkboxSound:checkboxSound,checkboxNotification:checkboxNotification});
+         this.alerts.set(description,{test,checkboxSound,checkboxNotification});
          this.divs.appendChild(div);
       }
    },
@@ -525,12 +572,12 @@ const sobAlerter={
       this.alerts=new Map();
       this.previousSound=false;
       this.previousNotification=false;
-      sobAlertSound.register(this.id,'https://assets.mixkit.co/sfx/preview/mixkit-police-whistle-614.mp3');
+      sobAlertSound.register(this.id,'https://sobex.github.io/MoreFairScripting/mixkit-police-whistle-614.wav');
       sobAlertNotification.register(this.id,'Chad is calling!','ERROR: No alerts active');
    },
    div(store){
       let div=document.createElement('div');
-      div.innerHTML='<select></select> <input type="number" min="0" value="0" style="background-color: inherit; width: 100px;"> <button style="color: var(--text-dark-highlight-color);">Add Alert</button><br><div></div>';
+      div.innerHTML='<select></select> <input type="number" min="0" value="0" style="background-color: inherit; width: 100px;"> <button style="color: var(--text-dark-highlight-color);">Add Alert</button><br/><div></div>';
       let dropdown,input,button;
       [dropdown,input,button,,this.divs]=div.children;
       for(let description of [
@@ -559,14 +606,14 @@ const sobAlerter={
    },
    onTick(store,body){
       let alerted=false;
-      let message='';
+      let message=[];
       for(let [description,alert] of this.alerts.entries()){
          let active=alert.test(store);
          if(alert.checkboxSound.checked&&active){
             alerted=true;
          }
          if(alert.checkboxNotification.checked&&active){
-            message+=description+'\n';
+            message.push(description);
          }
       }
       if(alerted){
@@ -576,8 +623,8 @@ const sobAlerter={
          sobAlertSound.stop(this.id);
          this.previousSound=false;
       }
-      if(message){
-         sobAlertNotification.play(this.id,message);
+      if(message.length){
+         sobAlertNotification.play(this.id,message.join('\n'));
          this.previousNotification=true;
       }else if(this.previousNotification){
          sobAlertNotification.stop(this.id);
@@ -715,7 +762,7 @@ const sobEta={
    },
    div(store){
       let div=document.createElement('div');
-      div.innerHTML='ETA: <select></select><br><pre></pre>';
+      div.innerHTML='ETA: <select></select><br/><pre></pre>';
       [this.dropdown,,this.out]=div.children;
       for(let description of [
          'OFF',

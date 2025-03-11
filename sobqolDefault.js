@@ -4,6 +4,7 @@
    script.onload=()=>{
       sobqol.setup();
       //sobqol.register(sobTest);
+      sobqol.register(sobPermissions);
       sobqol.register(sobTicker);
       //sobqol.register(sobSimExport);
       //sobqol.register(sobTop);
